@@ -1,0 +1,65 @@
+1. zip -s 0 CVPR2023-Anti_Spoof-Challenge-Release-Data-20230209.zip --out xxx.zip
+2. unzip xxx.zip (get password through application, see details at https://github.com/deepinsight/insightface/tree/master/challenges/cvpr23-fas-wild)
+  e.g : unzip -P password xxx.zip
+
+3. Directory Structure:
+Data
+└── Train
+    ├── living
+    │   └── subject
+    │       ├── imagename.jpg
+    │       └── imagename.txt
+    └── spoof
+        └── PAs type
+            └── subject
+                ├── imagename.jpg
+                └── imagename.txt
+ 
+
+4. Bounding box and Landmarks description:
+  - Produced by RetinaFace : https://github.com/deepinsight/insightface/tree/master/RetinaFace
+
+  @inproceedings{Deng2020CVPR,
+
+      title = {RetinaFace: Single-Shot Multi-Level Face Localisation in the Wild},
+
+      author = {Deng, Jiankang and Guo, Jia and Ververas, Evangelos and Kotsia, Irene and Zafeiriou, Stefanos},
+
+      booktitle = {CVPR},
+
+      year = {2020}
+
+  }
+  
+  - e.g: Train/spoof/2D-Display-Phone/000001/000001.txt
+    192 148 (bbox left top)
+    234 203 (bbox right bottom)
+    216 171 (landmark left eye)
+    230 168 (landmark right eye)
+    231 180 (landmark nose)
+    218 190 (landmark left mouth )
+    229 188 (landmark right mouth )
+  
+
+```
+@misc{2023insightfacefaswild,
+    title={InsightFace Wild Anti-Spoofing Dataset},
+    author={Dong Wang, Qiqi Shao, Haochi He, Zhian Chen, Jia Guo, Jiankang Deng, Jun Wan, Ajian Liu, Sergio Escalera, Hugo Jair Escalante, Isabelle Guyon, Zhen Lei, Chenxu Zhao, Shaopeng Tang },
+    howpublished = {\url{https://github.com/deepinsight/insightface/tree/master/challenges/cvpr23-fas-wild}},
+    year={2023}
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
