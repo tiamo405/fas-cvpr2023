@@ -179,11 +179,6 @@ def parper_photo_poster():
             zipf.write(pt, arcname=arcname)
             zipf.write(pt.replace('.jpg', '.txt'), arcname=arcname.replace('.jpg', '.txt'))
 
-def checkfile():
-    for i in os.listdir("data/train/0") :
-        if 'spoof' in i and '2D' in i:
-            print(i)
-
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -193,5 +188,4 @@ if __name__ == "__main__" :
     # split_array()
     # save_zip()
     # check_point()
-    # parper_photo_poster()
-    checkfile()
+    parper_photo_poster()
