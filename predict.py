@@ -100,7 +100,11 @@ def pred(args, folder_save) :
 
         if args.save_txt :
             if args.activation == 'linear':
-                write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(score[1]), 
+                if args.num_classes == 2 :
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(score[1]), 
+                      path= path_save_txt)
+                else :
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(1 - (score[0]+score[2])/2), 
                       path= path_save_txt)
                 # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
                 #       path= path_save_txt)
@@ -122,6 +126,7 @@ def get_args_parser():
     parser.add_argument('--load_width', type=int, default=128)
 
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
+    parser.add_argument('--num_classes', type= int, default= 2)
     parser.add_argument('--load_checkpoint', type= str2bool, default= False)
     parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
     parser.add_argument('--name_model', type=str, default= 'alexnet')

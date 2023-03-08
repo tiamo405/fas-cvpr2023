@@ -7,6 +7,7 @@ import zipfile as zf
 import pandas as pd
 import numpy as np
 import zipfile
+import random
 from dataset.utils import read_txt
 def checkReturn():
     a = 2
@@ -15,6 +16,7 @@ def checkReturn():
         'a' :a,
         'b' :b
     })
+
 def softmax():
     m = nn.Softmax(dim=1)
     input = torch.randn(3, 2)
@@ -37,9 +39,11 @@ def checkdict() :
         }
     for i in dict :
         print(dic[i])
+
 def printdict(dic) :
     for i in dic :
         print(i, dic[i])
+
 def count() :
     df_all = pd.read_csv("data/train/all_image.csv")
     path_all = df_all['path_all_image']
@@ -92,6 +96,7 @@ def count() :
     printdict(dic_all)
     print(f'filter image : spoof: {spoof_filter}, living: {living_filter}')
     printdict(dic_filter)
+
 def split_array() :
     df_filter = pd.read_csv("data/train/filter_image.csv")
     path_filter = np.array(df_filter['path'])
@@ -113,6 +118,7 @@ def split_array() :
             'path' : new_array
         }) 
         df.to_csv(path_save, index= False)
+
 def save_zip() :
     # for i in range(4, 10) :
     df = pd.read_csv("data/train/image_3D.csv")
@@ -136,6 +142,48 @@ def check_point() :
     im = cv2.rectangle(im, (left, top), (right, bottom), color= (0,0,225), thickness= 1)
     cv2.imwrite('test.jpg', im)
     print(left, top)
+
+def parper_photo_poster():
+    pathFolderSpoof = "/mnt/sda1/datasets/FAS-CVPR2023/train/CVPR2023-Anti_Spoof-Challenge-Release-Data-20230209/Train/spoof"
+    mucdich = {'Newspaper':[], 
+               'Photo':[], 
+               'Poster':[]
+               }
+    label = ['Newspaper', 'Photo', 'Poster']
+    df= pd.read_csv("data/train/all_image.csv")
+    path = df["path_all_image"]
+    print(path)
+    for dir in path :
+        for i in label :
+            if i in dir:
+                mucdich[i].append(dir)
+    newpaper = random.sample(mucdich['Newspaper'], 2000)
+    photo = random.sample(mucdich['Photo'], 2000)
+    poster = random.sample(mucdich['Poster'], 2000)
+    zip_filename = os.path.join("/mnt/sda1/datasets/FAS-CVPR2023/train/" , "image_2D.zip")
+    new_path = []
+    for i in newpaper :
+        new_path.append(i)
+    for i in photo :
+        new_path.append(i)
+    for i in poster :
+        new_path.append(i)
+
+    with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for pt in new_path :
+            tmp = pt.split("/")
+            if 'living' in pt :
+                arcname = tmp[-3]+'-'+tmp[-2]+'-'+tmp[-1]
+            else :
+                arcname = tmp[-4] +'-'+tmp[-3]+'-'+tmp[-2]+'-'+tmp[-1]
+            zipf.write(pt, arcname=arcname)
+            zipf.write(pt.replace('.jpg', '.txt'), arcname=arcname.replace('.jpg', '.txt'))
+
+def checkfile():
+    for i in os.listdir("data/train/0") :
+        if 'spoof' in i and '2D' in i:
+            print(i)
+
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -144,4 +192,6 @@ if __name__ == "__main__" :
     # count()
     # split_array()
     # save_zip()
-    check_point()
+    # check_point()
+    # parper_photo_poster()
+    checkfile()

@@ -116,13 +116,20 @@ class FasDataset(data.Dataset):
         ])
         self.load_height = args.load_height
         self.load_width = args.load_width
-        
+        self.rate = args.rate
         path_image_s = []
         labels = []
         for pt in os.listdir(self.path_data) :
             if '.txt' not in pt :
                 path_image_s.append(os.path.join(self.path_data, pt))
-                labels.append(0 if 'spoof'in pt else 1)
+                if args.num_classes == 2 :
+                    labels.append(0 if 'spoof'in pt else 1)
+                else :
+                    if 'spoof' in pt and '3D' not in pt :
+                        labels.append(0)
+                    elif 'living' in pt :
+                        labels.append(1)
+                    else : labels.append(2)
         self.path_image_s = path_image_s
         self.labels = labels
     
@@ -133,6 +140,7 @@ class FasDataset(data.Dataset):
         img = cv2.imread(path_image) # anh full
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # chuyen mau
         (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
+        left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         # print(img.shape)
         img_aligin      = align_face(img, dst) # ảnh face
 

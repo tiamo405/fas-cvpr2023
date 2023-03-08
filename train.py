@@ -157,7 +157,7 @@ def train(args, lenFolder):
 
     best_acc = 0.0
     best_epoch = None
-    for epoch in range(args.start_epoch, args.epochs +1):
+    for epoch in range(1, args.epochs +1):
         print(f'Epoch {epoch}/{args.epochs}')
         print('-' * 15)
         for phase in ['train', 'val']:
@@ -226,16 +226,14 @@ def get_args_parser():
     parser.add_argument('--epochs', default=20, type=int)
     parser.add_argument('--update_freq', default=1, type=int,
                         help='gradient accumulation steps')
+    
+    # path, dir
+    parser.add_argument('--checkpoint_dir', type= str, default='checkpoints')
+    parser.add_argument('--path_data', default='data/train/0', type=str,
+                        help='dataset path')
+    
     # Model parameters
     parser.add_argument('--name_model', type=str, default='alexnet')
-    parser.add_argument('--input_size', default=224, type=int,
-                        help='image input size')
-    parser.add_argument('--checkpoint_dir', type= str, default='checkpoints')
-    parser.add_argument('--pretrained', type=str2bool, default= False)
-    parser.add_argument('--num_save_ckp', type= int, default= 5)
-    parser.add_argument('--threshold', type= float, default= 0.5)
-
-
     parser.add_argument('--lr', type=float, default=4e-3, metavar='LR',
                         help='learning rate (default: 4e-3), with total batch size 4096')
     parser.add_argument('--layer_decay', type=float, default=1.0)
@@ -247,23 +245,21 @@ def get_args_parser():
                         help='num of steps to warmup LR, will overload warmup_epochs if set > 0')
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
 
+    #checkpoint
+    parser.add_argument('--pretrained', type=str2bool, default= False)
+    parser.add_argument('--num_save_ckp', type= int, default= 5)
+    parser.add_argument('--save_ckpt', type=str2bool, default=True)
+
+    parser.add_argument('--num_workers', default=2, type=int)
 
     # Dataset parameters
-    parser.add_argument('--path_data', default='data/train/0', type=str,
-                        help='dataset path')
     parser.add_argument('--num_classes', default=2, type=int,
-                        help='number of the classification types')
+                help='number of the classification types')
     parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
+    parser.add_argument('--rate', type=float, default=1.2)
 
-    parser.add_argument('--save_ckpt', type=str2bool, default=True)
-    parser.add_argument('--save_ckpt_num', default=2, type=int)
-
-    parser.add_argument('--start_epoch', default=1, type=int, metavar='N',
-                        help='start epoch')
-    parser.add_argument('--num_workers', default=2, type=int)
-    
     opt = parser.parse_args()
     return opt
 

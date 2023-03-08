@@ -114,7 +114,19 @@ def image_3d() :
         'path_image' : path
     })
     df.to_csv(os.path.join('data/train', 'image_3D.csv'), index= False)
+def parper_photo_poster() :
+    pathFolderSpoof = "/mnt/sda1/datasets/FAS-CVPR2023/train/CVPR2023-Anti_Spoof-Challenge-Release-Data-20230209/Train/spoof"
+    mucdich = ['Newpaper', 'Photo', 'Poster']
+    path = []
+    for subjects in os.listdir(pathFolderSpoof) :
+        id_sub = os.listdir(os.path.join(pathFolderSpoof, subjects))
+        for nameIdFolder in id_sub :
+            for nameFile in os.listdir(os.path.join(pathFolderSpoof, subjects, nameIdFolder)) :
+                if '.txt' not in nameFile and nameIdFolder in mucdich : 
+                    path.append(os.path.join(pathFolderSpoof, subjects, nameIdFolder, nameFile))
+    print(path)
 if __name__ =="__main__":
     # create_csv_train(parse= 'Train')
     # get_all_path_image()
-    image_3d()
+    # image_3d()
+    parper_photo_poster()
