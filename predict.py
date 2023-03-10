@@ -42,11 +42,12 @@ class Model():
                                         )
         self.load_height = args.load_height
         self.load_width = args.load_width
-        self.tfms = transforms.Compose([
+        self.transform = transforms.Compose([
                                         transforms.Resize((self.load_height, self.load_width)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
-        
+        self.input = args.input
+        self.rate = args.rate
         self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -55,18 +56,31 @@ class Model():
         
 
     def preprocess(self, path_image):
-        img = cv2.imread(path_image)
+        img_full = cv2.imread(path_image)
         (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
-        img_aligin = align_face(img, dst)
-        img  =cv2.resize(img, (self.load_width, self.load_height))
+        left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
+        img_rate = img_full[top: bottom, left: right, :]
+        img_aligin = align_face(img_full, dst)
+        img_full  =cv2.resize(img_full, (self.load_width, self.load_height))
         img_aligin = cv2.resize(img_aligin, (self.load_width, self.load_height))
-        input = np.concatenate((img, img_aligin), axis= 1)
-        input = self.tfms(input)
-        return input.to(self.device).unsqueeze(0)
+        img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
+        img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        img_full                         = self.transform(img_full)
+        img_aligin                  = self.transform(img_aligin)
+        img_rate                        = self.transform(img_rate)
+        img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
+        img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
+
+        if self.input == 'img_full' :
+            return img_full.to(self.device).unsqueeze(0)
+        elif self.input == 'img_add_img_full_aligin' :
+            return img_add_img_full_aligin.to(self.device).unsqueeze(0)
+        else:
+            return img_add_img_rate_aligin.to(self.device).unsqueeze(0)
     def predict(self, path_image):
         input = self.preprocess(path_image)
         with torch.no_grad():
-            output = self.model(input)
+            output = self.model(input) 
             if args.activation == 'sigmoid':
                 output = output.to('cpu').numpy()
             else :
@@ -122,23 +136,32 @@ def pred(args, folder_save) :
 
 def get_args_parser():
     parser = argparse.ArgumentParser()
+    #path, dir
     parser.add_argument('--save_txt', type= str2bool, default=True)
     parser.add_argument('--path_data', type= str, default= '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data')
     parser.add_argument('--path_save', type= str, default= 'results')
     parser.add_argument('--path_txt', type= str, default="data/dev/dev.txt")
-    parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
-    parser.add_argument('--load_height', type=int, default=224)
-    parser.add_argument('--load_width', type=int, default=128)
+    parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
 
-    parser.add_argument('--input', type=str, default='img_full', choices=['img_full','img_add_img_full_aligin', 'img_add_img_rate_aligin'])
+    #model
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
     parser.add_argument('--nb_classes', type= int, default= 2)
     parser.add_argument('--load_checkpoint', type= str2bool, default= False)
-    parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
     parser.add_argument('--name_model', type=str, default= 'alexnet')
     parser.add_argument('--num_train', type= str)
     parser.add_argument('--num_ckpt', type=str)
     parser.add_argument('--threshold', type= float, default= 0.9)
+
+    #data
+    parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
+    parser.add_argument('--load_height', type=int, default=224)
+    parser.add_argument('--load_width', type=int, default=128)
+    parser.add_argument('--input', type=str, default='img_full', choices=['img_full'\
+                        ,'img_add_img_full_aligin', 'img_add_img_rate_aligin'])
+    parser.add_argument('--rate', type=float, default=1.2)
+    
+    
+    
     args = parser.parse_args()
     return args
 

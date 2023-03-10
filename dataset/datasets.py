@@ -158,9 +158,9 @@ class FasDataset(data.Dataset):
         img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
         img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
         # đưa về cùng kích cỡ width*2, height
-        img_full = img_full             =cv2.resize(img_full, (self.load_width*2, self.load_height))
-        img_rate                        =cv2.resize(img_rate, (self.load_width*2, self.load_height))
-        img_aligin                      = cv2.resize(img_aligin, (self.load_width*2, self.load_height))
+        # img_full             =cv2.resize(img_full, (self.load_width*2, self.load_height))
+        # img_rate                        =cv2.resize(img_rate, (self.load_width*2, self.load_height))
+        # img_aligin                      = cv2.resize(img_aligin, (self.load_width*2, self.load_height))
         # cv2 to Image PIL
         img_full                         = Image.fromarray(img_full)
         img_aligin                      = Image.fromarray(img_aligin)
