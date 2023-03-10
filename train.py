@@ -113,7 +113,7 @@ def train(args, lenFolder):
 
     # model_without_ddp = model
     # n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
+    # total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
     # num_training_steps_per_epoch = len(trainDataset) // total_batch_size
     # num_training_steps_per_epoch = 1000 // total_batch_size
     if args.layer_decay < 1.0 or args.layer_decay > 1.0:
@@ -171,7 +171,13 @@ def train(args, lenFolder):
             running_loss = 0.0
             running_corrects = 0
             for inputs in tqdm(dataLoader[phase]):
-                input = inputs['img_add_img_full_aligin'].to(device)
+                if args.input == 'img_add_img_full_aligin':
+                    input = inputs['img_add_img_full_aligin'].to(device)
+                if args.input == 'img_full':
+                    input = inputs['img_full'].to(device)
+                if args.input == 'img_add_img_rate_aligin':
+                    input = inputs['img_add_img_rate_aligin'].to(device)
+                    
                 if args.activation == 'linear' :
                     labels = inputs['label'].to(device)
                 else :    
@@ -263,6 +269,7 @@ def get_args_parser():
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--num_workers', default=2, type=int)
+    parser.add_argument('--input', type=str, default='img_full', choices=['img_full','img_add_img_full_aligin', 'img_add_img_rate_aligin'])
     
     #mixup
     parser.add_argument('--mixup', type=float, default=0.0,
@@ -301,7 +308,7 @@ def get_args_parser():
         the end of training improves performance for ViTs.""")
     parser.add_argument('--use_polyloss', action='store_true',
                         help='Optimizer (default: "adamw"')
-
+    
     opt = parser.parse_args()
     return opt
 

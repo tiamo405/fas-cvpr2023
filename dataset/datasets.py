@@ -107,16 +107,19 @@ class FasDataset(data.Dataset):
     def __init__(self, args) -> None:
         super(FasDataset, self).__init__()
         self.path_data = args.path_data
+        
+        self.load_height = args.load_height
+        self.load_width = args.load_width
         self.transform = transforms.Compose([
             #ColorJitter() thực hiện việc thay đổi độ sáng, 
             # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
+            
             transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+            transforms.Resize((self.load_height, self.load_width)),
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
             
         ])
-        self.load_height = args.load_height
-        self.load_width = args.load_width
         self.rate = args.rate
         self.nb_classes = args.nb_classes
         path_image_s = []
@@ -154,6 +157,10 @@ class FasDataset(data.Dataset):
         
         img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
         img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        # đưa về cùng kích cỡ width*2, height
+        img_full = img_full             =cv2.resize(img_full, (self.load_width*2, self.load_height))
+        img_rate                        =cv2.resize(img_rate, (self.load_width*2, self.load_height))
+        img_aligin                      = cv2.resize(img_aligin, (self.load_width*2, self.load_height))
         # cv2 to Image PIL
         img_full                         = Image.fromarray(img_full)
         img_aligin                      = Image.fromarray(img_aligin)
@@ -168,17 +175,7 @@ class FasDataset(data.Dataset):
         img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
         img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
 
-        # if self.nb_classes == 3 :
-        #     if label == 0 : 
-        #         result = {
-        #             'label' : label,
-        #             'input' : img_add_img_full_aligin
-        #         }
-        #     else : 
-        #         result = {
-        #             'label' : label,
-        #             'input' : img_full
-        #         }
+
         result = {
             'path_image' : path_image,
             'label' : label,

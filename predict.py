@@ -40,16 +40,19 @@ class Model():
                                         nn.Linear(self.model.classifier[-1].in_features, 1),
                                         nn.Sigmoid()
                                         )
+        self.load_height = args.load_height
+        self.load_width = args.load_width
         self.tfms = transforms.Compose([
+                                        transforms.Resize((self.load_height, self.load_width)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
+        
         self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model.eval()
-        self.load_height = args.load_height
-        self.load_width = args.load_width
+        
 
     def preprocess(self, path_image):
         img = cv2.imread(path_image)
@@ -127,6 +130,7 @@ def get_args_parser():
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
 
+    parser.add_argument('--input', type=str, default='img_full', choices=['img_full','img_add_img_full_aligin', 'img_add_img_rate_aligin'])
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
     parser.add_argument('--nb_classes', type= int, default= 2)
     parser.add_argument('--load_checkpoint', type= str2bool, default= False)
