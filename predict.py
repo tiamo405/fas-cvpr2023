@@ -7,13 +7,13 @@ import os
 import torchvision
 import datetime
 
-from time import time
+import time
 from torch import nn
 from torchvision import transforms
 from PIL import Image
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dataset.utils import align_face, read_txt
-from src.utils import load_checkpoint, create_model, write_txt, save_txt_array, save_zip
+from src.utils import write_txt, save_zip
 from tqdm import tqdm
 def str2bool(v):
     """
@@ -101,7 +101,7 @@ def pred(args, folder_save) :
         if args.save_txt :
             if args.activation == 'linear':
                 if args.num_classes == 2 :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(score[1]), 
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
                       path= path_save_txt)
                 else :
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(1 - (score[0]+score[2])/2), 
@@ -130,8 +130,8 @@ def get_args_parser():
     parser.add_argument('--load_checkpoint', type= str2bool, default= False)
     parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
     parser.add_argument('--name_model', type=str, default= 'alexnet')
-    parser.add_argument('--num_train', type= str, default='1')
-    parser.add_argument('--num_ckp', type=str, default='best_epoch')
+    parser.add_argument('--num_train', type= str)
+    parser.add_argument('--num_ckp', type=str)
     parser.add_argument('--threshold', type= float, default= 0.9)
     args = parser.parse_args()
     return args

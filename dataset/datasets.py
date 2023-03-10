@@ -109,7 +109,7 @@ class FasDataset(data.Dataset):
         self.transform = transforms.Compose([
             #ColorJitter() thực hiện việc thay đổi độ sáng, 
             # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
-            transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+            # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
             
@@ -117,12 +117,13 @@ class FasDataset(data.Dataset):
         self.load_height = args.load_height
         self.load_width = args.load_width
         self.rate = args.rate
+        self.nb_classes = args.nb_classes
         path_image_s = []
         labels = []
         for pt in os.listdir(self.path_data) :
             if '.txt' not in pt :
                 path_image_s.append(os.path.join(self.path_data, pt))
-                if args.num_classes == 2 :
+                if self.nb_classes == 2 :
                     labels.append(0 if 'spoof'in pt else 1)
                 else :
                     if 'spoof' in pt and '3D' not in pt :
@@ -137,27 +138,33 @@ class FasDataset(data.Dataset):
         path_image  = self.path_image_s[index]
         label       = self.labels[index]
         # print(path_image)
-        img = cv2.imread(path_image) # anh full
+        img_full = cv2.imread(path_image) # anh full
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # chuyen mau
         (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
         left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         # print(img.shape)
-        img_aligin      = align_face(img, dst) # ảnh face
+        img_aligin      = align_face(img_full, dst) # ảnh face
+        img_rate = img_full[top: bottom, left: right, :]
 
-        img             =cv2.resize(img, (self.load_width, self.load_height))
-        img_aligin      = cv2.resize(img_aligin, (self.load_width, self.load_height))
+        img_full                         =cv2.resize(img_full, (self.load_width, self.load_height))
+        img_rate                        =cv2.resize(img_rate, (self.load_width, self.load_height))
+        img_aligin                      = cv2.resize(img_aligin, (self.load_width, self.load_height))
         
-        img_add         = np.concatenate((img, img_aligin), axis= 1)
+        img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
+        img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
 
-        img             = self.transform(img)
-        img_pil_aligin  = self.transform(img_aligin)
-        img_add         = self.transform(img_add)
+        img_full                         = self.transform(img_full)
+        img_pil_aligin                  = self.transform(img_aligin)
+        img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
+        img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
+
         result = {
             'path_image' : path_image,
             'label' : label,
             'img_pil_aligin' : img_pil_aligin,
-            'img' : img,
-            'img_add' : img_add
+            'img' : img_full,
+            'img_add_img_full_aligin' : img_add_img_full_aligin,
+            'img_add_img_rate_aligin' : img_add_img_rate_aligin
         }
         return result
     
