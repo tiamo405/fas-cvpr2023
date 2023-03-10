@@ -101,10 +101,10 @@ def pred(args, folder_save) :
         if args.save_txt :
             if args.activation == 'linear':
                 if args.nb_classes == 2 :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
-                      path= path_save_txt)
-                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
                     #   path= path_save_txt)
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                      path= path_save_txt)
                 else :
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(1 - (score[0]+score[2])/2), 
                       path= path_save_txt)
@@ -140,7 +140,7 @@ def get_args_parser():
 
 if __name__ == "__main__" :
     args = get_args_parser()
-    print(print(str(args).split('(')[1].split(',')))
+    print('\n'.join(map(str,(str(args).split('(')[1].split(',')))))
     folder_save = ''
     if not os.path.exists(args.path_save) :
         os.makedirs(args.path_save)
