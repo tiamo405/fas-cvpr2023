@@ -90,7 +90,7 @@ def train(args, lenFolder):
     }
     # print(Dataset.__getitem__(100))
     # ---------------------------------------------
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("device :", device)
     
     #----------------------------------
@@ -105,57 +105,57 @@ def train(args, lenFolder):
                                 )
         criterion = nn.BCELoss()
     
-    # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
-    # lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
+    lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     # model = create_model(args)
-    model = model.to(device)
+    model.to(device)
     print(model)
 
-    model_without_ddp = model
-    n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
-    # num_training_steps_per_epoch = len(trainDataset) // total_batch_size
-    num_training_steps_per_epoch = 1000 // total_batch_size
-    if args.layer_decay < 1.0 or args.layer_decay > 1.0:
-        num_layers = 12 # convnext layers divided into 12 parts, each with a different decayed lr value.
-        assert args.name_model in ['convnext_small', 'convnext_base', 'convnext_large', 'convnext_xlarge', 'alexnet'], \
-             "Layer Decay impl only supports convnext_small/base/large/xlarge"
-        assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
-    else:
-        assigner = None
+    # model_without_ddp = model
+    # n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    # total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
+    # # num_training_steps_per_epoch = len(trainDataset) // total_batch_size
+    # num_training_steps_per_epoch = 1000 // total_batch_size
+    # if args.layer_decay < 1.0 or args.layer_decay > 1.0:
+    #     num_layers = 12 # convnext layers divided into 12 parts, each with a different decayed lr value.
+    #     assert args.name_model in ['convnext_small', 'convnext_base', 'convnext_large', 'convnext_xlarge', 'alexnet'], \
+    #          "Layer Decay impl only supports convnext_small/base/large/xlarge"
+    #     assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
+    # else:
+    #     assigner = None
 
-    if assigner is not None:
-        print("Assigned values = %s" % str(assigner.values))
+    # if assigner is not None:
+    #     print("Assigned values = %s" % str(assigner.values))
     
-    mixup_fn = None
-    mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
-    if mixup_active:
-        print("Mixup is activated!")
-        mixup_fn = Mixup(
-            mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-            prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-            label_smoothing=args.smoothing, num_classes=args.nb_classes)
-    if args.activation == 'linear' :
-        if args.use_polyloss:
-            criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
-        elif mixup_fn is not None:
-            criterion = SoftTargetCrossEntropy()
-        elif args.smoothing > 0.:
-            criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-        else:
-            criterion = torch.nn.CrossEntropyLoss()
-    
-    
-    optimizer = create_optimizer(
-        args, model_without_ddp, skip_list=None,
-        get_num_layer=assigner.get_layer_id if assigner is not None else None, 
-        get_layer_scale=assigner.get_scale if assigner is not None else None)
+    # mixup_fn = None
+    # mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
+    # if mixup_active:
+    #     print("Mixup is activated!")
+    #     mixup_fn = Mixup(
+    #         mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
+    #         prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
+    #         label_smoothing=args.smoothing, num_classes=args.nb_classes)
+    # if args.activation == 'linear' :
+    #     if args.use_polyloss:
+    #         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
+    #     elif mixup_fn is not None:
+    #         criterion = SoftTargetCrossEntropy()
+    #     elif args.smoothing > 0.:
+    #         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+    #     else:
+    #         criterion = torch.nn.CrossEntropyLoss()
     
     
-    lr_schedule_values = utils.cosine_scheduler(
-        args.lr, args.min_lr, args.epochs, num_training_steps_per_epoch,
-        warmup_epochs=args.warmup_epochs, warmup_steps=args.warmup_steps,
-    )
+    # optimizer = create_optimizer(
+    #     args, model_without_ddp, skip_list=None,
+    #     get_num_layer=assigner.get_layer_id if assigner is not None else None, 
+    #     get_layer_scale=assigner.get_scale if assigner is not None else None)
+    # lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    
+    # lr_schedule_values = utils.cosine_scheduler(
+    #     args.lr, args.min_lr, args.epochs, num_training_steps_per_epoch,
+    #     warmup_epochs=args.warmup_epochs, warmup_steps=args.warmup_steps,
+    # )
     
 
     best_acc = 0.0
@@ -324,7 +324,7 @@ if __name__ == '__main__':
             lenFolder, 'args.txt'))
     
     start_time = time.time()
-    train(args= args, lenFolder = None)
+    train(args= args, lenFolder = lenFolder)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))

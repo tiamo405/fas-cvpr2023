@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import zipfile
 import random
-from dataset.utils import read_txt
+from dataset.utils import read_txt, align_face
 def checkReturn():
     a = 2
     b = 3
@@ -179,6 +179,24 @@ def parper_photo_poster():
             zipf.write(pt, arcname=arcname)
             zipf.write(pt.replace('.jpg', '.txt'), arcname=arcname.replace('.jpg', '.txt'))
 
+def checkdata() :
+    for file in os.listdir("data/train/0") :
+        if '.txt' not in file :
+            path = "data/train/0/" + file
+            try :
+                image = cv2.imread(path)
+                (left, top), (right, bottom), dst = read_txt(path.replace('.jpg', '.txt'))
+                img_rate = image[top: bottom, left: right, :]
+                img_rate                        =cv2.resize(img_rate, (128, 224))
+            except :
+                print(path)
+    # path = "data/train/0/spoof-2D-Display-Phone-000572-000004.jpg"
+    # (left, top), (right, bottom), dst = read_txt(path.replace('.jpg', '.txt'))
+    # image = cv2.imread(path)
+    # img_rate = image[abs(top): bottom, left: right, :]
+    # img = cv2.rectangle(image, (left, top), (right, bottom), color= (0,0,255), thickness= 1)
+    # cv2.imwrite('debug.jpg', img)
+
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -188,4 +206,5 @@ if __name__ == "__main__" :
     # split_array()
     # save_zip()
     # check_point()
-    parper_photo_poster()
+    # parper_photo_poster()
+    checkdata()

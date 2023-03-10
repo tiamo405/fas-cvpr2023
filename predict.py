@@ -43,7 +43,7 @@ class Model():
         self.tfms = transforms.Compose([
                                         transforms.ToTensor(),
                                         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
-        self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckp+'.pth')
+        self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
@@ -100,9 +100,11 @@ def pred(args, folder_save) :
 
         if args.save_txt :
             if args.activation == 'linear':
-                if args.num_classes == 2 :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                if args.nb_classes == 2 :
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
                       path= path_save_txt)
+                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                    #   path= path_save_txt)
                 else :
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(1 - (score[0]+score[2])/2), 
                       path= path_save_txt)
@@ -126,12 +128,12 @@ def get_args_parser():
     parser.add_argument('--load_width', type=int, default=128)
 
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
-    parser.add_argument('--num_classes', type= int, default= 2)
+    parser.add_argument('--nb_classes', type= int, default= 2)
     parser.add_argument('--load_checkpoint', type= str2bool, default= False)
     parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
     parser.add_argument('--name_model', type=str, default= 'alexnet')
     parser.add_argument('--num_train', type= str)
-    parser.add_argument('--num_ckp', type=str)
+    parser.add_argument('--num_ckpt', type=str)
     parser.add_argument('--threshold', type= float, default= 0.9)
     args = parser.parse_args()
     return args

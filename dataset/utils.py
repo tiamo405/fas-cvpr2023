@@ -100,7 +100,7 @@ def read_txt(path, align =False, rate = 1.2 ) :
     points = []
     with open(path, 'r') as f:
          for line in f :
-              points.append((int(line.strip().split()[0]), int(line.strip().split()[-1])))
+              points.append((abs(int(line.strip().split()[0])), abs(int(line.strip().split()[-1]))))
     (left, top) = points[0]
     (right, bottom) = points[1]
     dst = []

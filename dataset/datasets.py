@@ -168,6 +168,17 @@ class FasDataset(data.Dataset):
         img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
         img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
 
+        # if self.nb_classes == 3 :
+        #     if label == 0 : 
+        #         result = {
+        #             'label' : label,
+        #             'input' : img_add_img_full_aligin
+        #         }
+        #     else : 
+        #         result = {
+        #             'label' : label,
+        #             'input' : img_full
+        #         }
         result = {
             'path_image' : path_image,
             'label' : label,
