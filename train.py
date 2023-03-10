@@ -97,7 +97,7 @@ def train(args, lenFolder):
     model = torchvision.models.alexnet(pretrained = False)
     if args.activation == 'linear' :
         model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, args.nb_classes)
-        criterion = torch.nn.CrossEntropyLoss()
+        criterion = nn.CrossEntropyLoss()
     else :
         model.classifier[-1] = nn.Sequential(
                                 nn.Linear(model.classifier[-1].in_features, 1),
@@ -135,14 +135,15 @@ def train(args, lenFolder):
             mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
-    if args.use_polyloss:
-        criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
-    elif mixup_fn is not None:
-        criterion = SoftTargetCrossEntropy()
-    elif args.smoothing > 0.:
-        criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    else:
-        criterion = torch.nn.CrossEntropyLoss()
+    if args.activation == 'linear' :
+        if args.use_polyloss:
+            criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
+        elif mixup_fn is not None:
+            criterion = SoftTargetCrossEntropy()
+        elif args.smoothing > 0.:
+            criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+        else:
+            criterion = torch.nn.CrossEntropyLoss()
     
     
     optimizer = create_optimizer(

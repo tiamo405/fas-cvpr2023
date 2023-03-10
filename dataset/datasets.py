@@ -11,13 +11,14 @@ import os
 import cv2
 import numpy as np
 from torchvision import datasets, transforms
-# from timm.data.constants import \
-#     IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
+from timm.data.constants import \
+    IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
 # from timm.data import create_transform
 # from dataset.FaceAligner import FaceAligner
 from torch.utils import data
 from torchvision import transforms
 from dataset.utils import align_face, read_txt
+from PIL import Image
 
 # def build_dataset(is_train, args):
 #     transform = build_transform(is_train, args)
@@ -109,7 +110,7 @@ class FasDataset(data.Dataset):
         self.transform = transforms.Compose([
             #ColorJitter() thực hiện việc thay đổi độ sáng, 
             # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
-            # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+            transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
             
@@ -153,17 +154,25 @@ class FasDataset(data.Dataset):
         
         img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
         img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        # cv2 to Image PIL
+        img_full                         = Image.fromarray(img_full)
+        img_aligin                      = Image.fromarray(img_aligin)
+        img_rate                        = Image.fromarray(img_rate)
+        img_add_img_full_aligin          = Image.fromarray(img_add_img_full_aligin)
+        img_add_img_rate_aligin           = Image.fromarray(img_add_img_rate_aligin)
 
+        # transform
         img_full                         = self.transform(img_full)
-        img_pil_aligin                  = self.transform(img_aligin)
+        img_aligin                  = self.transform(img_aligin)
+        img_rate                        = self.transform(img_rate)
         img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
         img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
 
         result = {
             'path_image' : path_image,
             'label' : label,
-            'img_pil_aligin' : img_pil_aligin,
-            'img' : img_full,
+            'img_pil_aligin' : img_aligin,
+            'img_full' : img_full,
             'img_add_img_full_aligin' : img_add_img_full_aligin,
             'img_add_img_rate_aligin' : img_add_img_rate_aligin
         }
