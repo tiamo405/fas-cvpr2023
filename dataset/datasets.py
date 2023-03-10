@@ -120,17 +120,18 @@ class FasDataset(data.Dataset):
         self.nb_classes = args.nb_classes
         path_image_s = []
         labels = []
-        for pt in os.listdir(self.path_data) :
-            if '.txt' not in pt :
-                path_image_s.append(os.path.join(self.path_data, pt))
-                if self.nb_classes == 2 :
-                    labels.append(0 if 'spoof'in pt else 1)
-                else :
-                    if 'spoof' in pt and '3D' not in pt :
-                        labels.append(0)
-                    elif 'living' in pt :
-                        labels.append(1)
-                    else : labels.append(2)
+        for folder in os.listdir(self.path_data) :
+            for pt in os.listdir(os.path.join(self.path_data, folder)) :
+                if '.txt' not in pt :
+                    path_image_s.append(os.path.join(self.path_data, folder, pt))
+                    if self.nb_classes == 2 :
+                        labels.append(0 if 'spoof'in pt else 1)
+                    else :
+                        if 'spoof' in pt and '3D' not in pt :
+                            labels.append(0)
+                        elif 'living' in pt :
+                            labels.append(1)
+                        else : labels.append(2)
         self.path_image_s = path_image_s
         self.labels = labels
     

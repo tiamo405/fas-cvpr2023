@@ -230,7 +230,7 @@ def get_args_parser():
     
     # path, dir
     parser.add_argument('--checkpoint_dir', type= str, default='checkpoints')
-    parser.add_argument('--path_data', default='data/train/0', type=str,
+    parser.add_argument('--path_data', default='data/train', type=str,
                         help='dataset path')
     
     # Model parameters
