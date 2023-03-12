@@ -269,7 +269,7 @@ def get_args_parser():
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--input', type=str, default='img_full', choices=['img_full','img_add_img_full_aligin', 'img_add_img_rate_aligin'])
+    parser.add_argument('--img_input', type=str, default='img_full', choices=['img_full','img_add_img_full_aligin', 'img_add_img_rate_aligin'])
     
     #mixup
     parser.add_argument('--mixup', type=float, default=0.0,
@@ -328,7 +328,7 @@ if __name__ == '__main__':
                           lenFolder))
         arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
         write_txt(arg_save, os.path.join(args.checkpoint_dir, args.name_model,\
-            lenFolder, 'args.txt'))
+            lenFolder, 'args.txt'), remove= True)
     
     start_time = time.time()
     train(args= args, lenFolder = lenFolder)

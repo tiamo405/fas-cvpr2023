@@ -33,8 +33,9 @@ class Model():
 
     def __init__(self, args = None):
         self.model = torchvision.models.alexnet(pretrained = False)
+        self.nb_classes = args.nb_classes
         if args.activation == 'linear' :
-            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, 2)
+            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, self.nb_classes)
         else :
             self.model.classifier[-1] = nn.Sequential(
                                         nn.Linear(self.model.classifier[-1].in_features, 1),
@@ -59,17 +60,27 @@ class Model():
         img_full = cv2.imread(path_image)
         (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
         left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
+        
         img_rate = img_full[top: bottom, left: right, :]
         img_aligin = align_face(img_full, dst)
+        img_rate   =cv2.resize(img_rate, (self.load_width, self.load_height))
         img_full  =cv2.resize(img_full, (self.load_width, self.load_height))
         img_aligin = cv2.resize(img_aligin, (self.load_width, self.load_height))
+
         img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
         img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        
+        img_full                         = Image.fromarray(img_full)
+        img_aligin                      = Image.fromarray(img_aligin)
+        img_rate                        = Image.fromarray(img_rate)
+        img_add_img_full_aligin          = Image.fromarray(img_add_img_full_aligin)
+        img_add_img_rate_aligin           = Image.fromarray(img_add_img_rate_aligin)
+
         img_full                         = self.transform(img_full)
-        img_aligin                  = self.transform(img_aligin)
+        img_aligin                      = self.transform(img_aligin)
         img_rate                        = self.transform(img_rate)
-        img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
-        img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
+        img_add_img_full_aligin          = self.transform(img_add_img_full_aligin)
+        img_add_img_rate_aligin          = self.transform(img_add_img_rate_aligin)
 
         if self.input == 'img_full' :
             return img_full.to(self.device).unsqueeze(0)
@@ -123,7 +134,7 @@ def pred(args, folder_save) :
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
                       path= path_save_txt)
                 else :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(1 - (score[0]+score[2])/2), 
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(score[1]), 
                       path= path_save_txt)
                 # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
                 #       path= path_save_txt)
@@ -136,8 +147,9 @@ def pred(args, folder_save) :
 
 def get_args_parser():
     parser = argparse.ArgumentParser()
-    #path, dir
+    
     parser.add_argument('--save_txt', type= str2bool, default=True)
+    #path, dir
     parser.add_argument('--path_data', type= str, default= '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data')
     parser.add_argument('--path_save', type= str, default= 'results')
     parser.add_argument('--path_txt', type= str, default="data/dev/dev.txt")
