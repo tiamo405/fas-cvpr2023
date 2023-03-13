@@ -1,0 +1,96 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+
+import os
+import cv2
+import numpy as np
+from tqdm import tqdm
+
+from torchvision import datasets, transforms
+from timm.data.constants import \
+    IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
+# from timm.data import create_transform
+# from dataset.FaceAligner import FaceAligner
+from torch.utils import data
+from torchvision import transforms
+from dataset.utils import align_face, read_txt
+from PIL import Image
+
+
+class FasDatasetTest(data.Dataset):
+    def __init__(self, args) -> None:
+        super(FasDatasetTest, self).__init__()
+
+        self.path_data = args.path_data
+        self.load_height = args.load_height
+        self.load_width = args.load_width
+        self.parse = args.parse
+        self.input = args.img_input
+        self.rate = args.rate
+        self.path_txt = args.path_txt
+
+        self.transform = transforms.Compose([
+            #ColorJitter() thực hiện việc thay đổi độ sáng, 
+            # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
+            transforms.ToPILImage(),
+            # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+            transforms.Resize((self.load_height, self.load_width)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+            
+        ])
+        self.rate = args.rate
+        self.nb_classes = args.nb_classes
+        path_image_s = []
+        fnames = []
+
+        with open(args.path_txt, 'r') as f :
+            for line in f :
+                fnames.append(line.split()[0])
+        for fname in tqdm(fnames) :
+            path_image = os.path.join(self.path_data, fname)
+            path_image_s.append(path_image)
+        self.path_image_s = path_image_s
+    
+    def __getitem__(self, index) :
+        path_image  = self.path_image_s[index]
+
+        img_full = cv2.imread(path_image) # anh full
+
+        (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
+        left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
+        # print(img.shape)
+        img_aligin      = align_face(img_full, dst) # ảnh face
+        img_rate = img_full[top: bottom, left: right, :]
+
+        img_full                         =cv2.resize(img_full, (self.load_width, self.load_height))
+        img_rate                        =cv2.resize(img_rate, (self.load_width, self.load_height))
+        img_aligin                      = cv2.resize(img_aligin, (self.load_width, self.load_height))
+        
+        img_full_add_img_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
+        img_rate_add_img_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+
+        # transform
+        img_full                         = self.transform(img_full)
+        img_aligin                  = self.transform(img_aligin)
+        img_rate                        = self.transform(img_rate)
+        img_full_add_img_aligin               = self.transform(img_full_add_img_aligin)
+        img_rate_add_img_aligin               = self.transform(img_rate_add_img_aligin)
+
+
+        result = {
+            'path_image' : path_image,
+            'img_pil_aligin' : img_aligin,
+            'img_full' : img_full,
+            'img_full_add_img_aligin' : img_full_add_img_aligin,
+            'img_rate_add_img_aligin' : img_rate_add_img_aligin
+        }
+        return result
+    
+    def __len__(self):
+        return len(self.path_image_s)

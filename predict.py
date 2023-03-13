@@ -14,28 +14,16 @@ from torchvision import transforms
 from PIL import Image
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dataset.utils import align_face, read_txt
-from src.utils import write_txt, save_zip
+from src.utils import write_txt, save_zip, str2bool
 from tqdm import tqdm
-def str2bool(v):
-    """
-    Converts string to bool type; enables command line 
-    arguments in the format of '--arg1 true --arg2 false'
-    """
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 class Model():
 
     def __init__(self, args = None):
         self.model = torchvision.models.alexnet(pretrained = False)
         self.nb_classes = args.nb_classes
-        if args.activation == 'linear' :
+        self.activation = args.activation
+        if self.activation == 'linear' :
             self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, self.nb_classes)
         else :
             self.model.classifier[-1] = nn.Sequential(
@@ -50,6 +38,7 @@ class Model():
                                         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
         self.input = args.img_input
         self.rate = args.rate
+        
         self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,32 +60,32 @@ class Model():
         img_full  =cv2.resize(img_full, (self.load_width, self.load_height))
         img_aligin = cv2.resize(img_aligin, (self.load_width, self.load_height))
 
-        img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
-        img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        img_full_add_img_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
+        img_rate_add_img_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
         
         img_full                         = Image.fromarray(img_full)
         img_aligin                      = Image.fromarray(img_aligin)
         img_rate                        = Image.fromarray(img_rate)
-        img_add_img_full_aligin          = Image.fromarray(img_add_img_full_aligin)
-        img_add_img_rate_aligin           = Image.fromarray(img_add_img_rate_aligin)
+        img_full_add_img_aligin           = Image.fromarray(img_full_add_img_aligin )
+        img_rate_add_img_aligin           = Image.fromarray(img_rate_add_img_aligin)
 
         img_full                         = self.transform(img_full)
         img_aligin                      = self.transform(img_aligin)
         img_rate                        = self.transform(img_rate)
-        img_add_img_full_aligin          = self.transform(img_add_img_full_aligin)
-        img_add_img_rate_aligin          = self.transform(img_add_img_rate_aligin)
+        img_full_add_img_aligin           = self.transform(img_full_add_img_aligin )
+        img_rate_add_img_aligin          = self.transform(img_rate_add_img_aligin)
 
         if self.input == 'img_full' :
             return img_full.to(self.device).unsqueeze(0)
-        elif self.input == 'img_add_img_full_aligin' :
-            return img_add_img_full_aligin.to(self.device).unsqueeze(0)
+        elif self.input == 'img_full_add_img_aligin' :
+            return img_full_add_img_aligin .to(self.device).unsqueeze(0)
         else:
-            return img_add_img_rate_aligin.to(self.device).unsqueeze(0)
+            return img_rate_add_img_aligin.to(self.device).unsqueeze(0)
     def predict(self, path_image):
         input = self.preprocess(path_image)
         with torch.no_grad():
             output = self.model(input) 
-            if args.activation == 'sigmoid':
+            if self.activation == 'sigmoid':
                 output = output.to('cpu').numpy()
             else :
                 output = output.softmax(1).to('cpu').numpy()
@@ -116,10 +105,8 @@ def pred(args, folder_save) :
         shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
     model = Model(args = args)
     print(model.model)
-    path_txt = args.path_txt
-    # path_txt = os.path.join('data', args.parse, args.parse + '.txt')
     fnames = []
-    with open(path_txt, 'r') as f :
+    with open(args.path_txt, 'r') as f :
         for line in f :
             fnames.append(line.split()[0])
     scores = []
@@ -144,13 +131,19 @@ def pred(args, folder_save) :
                     #   path= path_save_txt)
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
                       path= path_save_txt)
+                    if score[1] >= args.threshold : 
+                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                        path= path_save_txt)
+                    else :
+                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                      path= path_save_txt)
                 else :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(score[1]), 
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
                       path= path_save_txt)
                 # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
                 #       path= path_save_txt)
             else :
-                write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(score[0]* args.threshold), 
+                write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
                       path= path_save_txt)
     if args.save_txt :
         save_zip(folder_save= folder_save)
@@ -173,14 +166,14 @@ def get_args_parser():
     parser.add_argument('--name_model', type=str, default= 'alexnet')
     parser.add_argument('--num_train', type= str)
     parser.add_argument('--num_ckpt', type=str)
-    parser.add_argument('--threshold', type= float, default= 0.9)
+    parser.add_argument('--threshold', type= float, default= 0.998)
 
     #data
     parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
-    parser.add_argument('--img_input', type=str, default='img_add_img_full_aligin', choices=['img_full'\
-                        ,'img_add_img_full_aligin', 'img_add_img_rate_aligin'])
+    parser.add_argument('--img_input', type=str, default='img_rate_add_img_aligin', \
+                        choices=['img_full','img_full_add_img_aligin', 'img_rate_add_img_aligin'])
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--combine', type= str, default= '016')
     

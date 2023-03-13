@@ -8,7 +8,11 @@ import pandas as pd
 import numpy as np
 import zipfile
 import random
+import argparse
 from dataset.utils import read_txt, align_face
+from src.utils import str2bool
+from torch.utils.data import DataLoader
+
 def checkReturn():
     a = 2
     b = 3
@@ -196,7 +200,83 @@ def checkdata() :
     # img_rate = image[abs(top): bottom, left: right, :]
     # img = cv2.rectangle(image, (left, top), (right, bottom), color= (0,0,255), thickness= 1)
     # cv2.imwrite('debug.jpg', img)
+def get_args_parser():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--save_txt', type= str2bool, default=True)
+    #path, dir
+    parser.add_argument('--path_data', type= str, default= '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data')
+    parser.add_argument('--path_save', type= str, default= 'results')
+    parser.add_argument('--path_txt', type= str, default="data/dev/dev.txt")
+    parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
 
+    #model
+    parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
+    parser.add_argument('--nb_classes', type= int, default= 2)
+    parser.add_argument('--load_checkpoint', type= str2bool, default= False)
+    parser.add_argument('--name_model', type=str, default= 'alexnet')
+    parser.add_argument('--num_train', type= str)
+    parser.add_argument('--num_ckpt', type=str)
+    parser.add_argument('--threshold', type= float, default= 0.998)
+
+    #data
+    parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
+    parser.add_argument('--load_height', type=int, default=224)
+    parser.add_argument('--load_width', type=int, default=128)
+    parser.add_argument('--img_input', type=str, default='img_add_img_full_aligin', choices=['img_full'\
+                        ,'img_add_img_full_aligin', 'img_add_img_rate_aligin'])
+    parser.add_argument('--rate', type=float, default=1.2)
+    parser.add_argument('--combine', type= str, default= '016')
+    
+    #model
+    parser.add_argument('--batch_size', default=16, type=int,
+                        help='Per GPU batch size')
+    parser.add_argument('--num_workers', default=2, type=int)
+    
+    
+    args = parser.parse_args()
+    return args
+def datset() :
+    args = get_args_parser()
+    from dataset.dataset_test import FasDatasetTest
+    from predict import Model, pred
+    from tqdm import tqdm
+    import torchvision
+    testDataset = FasDatasetTest(args)
+    print(testDataset.__getitem__(0)['img_full_add_img_aligin'].shape)
+    testLoader = DataLoader(testDataset, batch_size=args.batch_size, \
+                            num_workers= args.num_workers)
+    model = torchvision.models.alexnet(pretrained = False)
+    if args.activation == 'linear' :
+        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, args.nb_classes)
+    else :
+        model.classifier[-1] = nn.Sequential(
+                                        nn.Linear(model.classifier[-1].in_features, 1),
+                                        nn.Sigmoid()
+                                        )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
+    model.load_state_dict(torch.load(checkpoint_model)['model_state_dict'])
+    model.to(device)
+    model.eval()
+    input = testDataset.__getitem__(0)['img_full_add_img_aligin'].to(device).unsqueeze(0)
+    print(testDataset.__getitem__(0)['path_image'])
+    with torch.no_grad():
+        output = model(input)
+        output = output.softmax(1).to('cpu').numpy()
+        # score = np.mean(output, axis=0)
+        print(output)
+    # for inputs in tqdm(testLoader) :
+    #     input = inputs['img_full_add_img_aligin'].to(device)
+    #     with torch.no_grad() : 
+    #         outputs = model(input)
+    #         print(outputs.softmax(1).to('cpu').numpy())
+    #         # if args.activation == 'linear' :
+    #         #     _, preds = torch.max(outputs, 1)
+    #         # else :
+    #         #     preds = (outputs > 0.5).float()
+    #         # print(preds)
+    #         break
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -207,4 +287,5 @@ if __name__ == "__main__" :
     # save_zip()
     # check_point()
     # parper_photo_poster()
-    checkdata()
+    # checkdata()
+    datset()

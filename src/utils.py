@@ -17,6 +17,7 @@ import torch.distributed as dist
 import random
 import sys
 import zipfile
+import argparse
 from timm.utils import get_state_dict
 from collections import defaultdict, deque
 
@@ -455,6 +456,19 @@ def save_zip(folder_save, remove = True) :
         os.remove(path_save)
     with zipfile.ZipFile(path_save, "w", zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(file_path, arcname=file_path.split("/")[-1])
+def str2bool(v):
+    """
+    Converts string to bool type; enables command line 
+    arguments in the format of '--arg1 true --arg2 false'
+    """
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 if __name__ =="__main__" :
     scores = []
     fnames = []

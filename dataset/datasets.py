@@ -110,6 +110,7 @@ class FasDataset(data.Dataset):
         
         self.load_height = args.load_height
         self.load_width = args.load_width
+        self.parse = args.parse
         self.transform = transforms.Compose([
             #ColorJitter() thực hiện việc thay đổi độ sáng, 
             # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
@@ -128,6 +129,7 @@ class FasDataset(data.Dataset):
             for pt in os.listdir(os.path.join(self.path_data, folder)) :
                 if '.txt' not in pt :
                     path_image_s.append(os.path.join(self.path_data, folder, pt))
+
                     if self.nb_classes == 2 :
                         labels.append(0 if 'spoof'in pt else 1)
                     else :
@@ -155,8 +157,8 @@ class FasDataset(data.Dataset):
         img_rate                        =cv2.resize(img_rate, (self.load_width, self.load_height))
         img_aligin                      = cv2.resize(img_aligin, (self.load_width, self.load_height))
         
-        img_add_img_full_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
-        img_add_img_rate_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        img_full_add_img_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
+        img_rate_add_img_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
         # đưa về cùng kích cỡ width*2, height
         # img_full             =cv2.resize(img_full, (self.load_width*2, self.load_height))
         # img_rate                        =cv2.resize(img_rate, (self.load_width*2, self.load_height))
@@ -165,15 +167,15 @@ class FasDataset(data.Dataset):
         img_full                         = Image.fromarray(img_full)
         img_aligin                      = Image.fromarray(img_aligin)
         img_rate                        = Image.fromarray(img_rate)
-        img_add_img_full_aligin          = Image.fromarray(img_add_img_full_aligin)
-        img_add_img_rate_aligin           = Image.fromarray(img_add_img_rate_aligin)
+        img_full_add_img_aligin          = Image.fromarray(img_full_add_img_aligin)
+        img_rate_add_img_aligin           = Image.fromarray(img_rate_add_img_aligin)
 
         # transform
         img_full                         = self.transform(img_full)
         img_aligin                  = self.transform(img_aligin)
         img_rate                        = self.transform(img_rate)
-        img_add_img_full_aligin               = self.transform(img_add_img_full_aligin)
-        img_add_img_rate_aligin               = self.transform(img_add_img_rate_aligin)
+        img_full_add_img_aligin               = self.transform(img_full_add_img_aligin)
+        img_rate_add_img_aligin               = self.transform(img_rate_add_img_aligin)
 
 
         result = {
@@ -181,8 +183,8 @@ class FasDataset(data.Dataset):
             'label' : label,
             'img_pil_aligin' : img_aligin,
             'img_full' : img_full,
-            'img_add_img_full_aligin' : img_add_img_full_aligin,
-            'img_add_img_rate_aligin' : img_add_img_rate_aligin
+            'img_full_add_img_aligin' : img_full_add_img_aligin,
+            'img_rate_add_img_aligin' : img_rate_add_img_aligin
         }
         return result
     
