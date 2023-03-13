@@ -201,7 +201,7 @@ if __name__ == "__main__" :
                                         args.parse, 
                                         num_folder))
         
-        folder_save = os.path.join(args.path_save, args.parse, str(num_folder) )
+        folder_save = os.path.join(args.path_save, args.parse, num_folder)
         arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
         write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
     start_time = time.time()

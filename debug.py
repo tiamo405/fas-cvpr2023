@@ -245,7 +245,7 @@ def datset() :
     testDataset = FasDatasetTest(args)
     print(testDataset.__getitem__(0)['img_full_add_img_aligin'].shape)
     testLoader = DataLoader(testDataset, batch_size=args.batch_size, \
-                            num_workers= args.num_workers)
+                            num_workers= args.num_workers, shuffle= False)
     model = torchvision.models.alexnet(pretrained = False)
     if args.activation == 'linear' :
         model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, args.nb_classes)
@@ -259,24 +259,26 @@ def datset() :
     model.load_state_dict(torch.load(checkpoint_model)['model_state_dict'])
     model.to(device)
     model.eval()
-    input = testDataset.__getitem__(0)['img_full_add_img_aligin'].to(device).unsqueeze(0)
-    print(testDataset.__getitem__(0)['path_image'])
-    with torch.no_grad():
-        output = model(input)
-        output = output.softmax(1).to('cpu').numpy()
-        # score = np.mean(output, axis=0)
-        print(output)
-    # for inputs in tqdm(testLoader) :
-    #     input = inputs['img_full_add_img_aligin'].to(device)
-    #     with torch.no_grad() : 
-    #         outputs = model(input)
-    #         print(outputs.softmax(1).to('cpu').numpy())
-    #         # if args.activation == 'linear' :
-    #         #     _, preds = torch.max(outputs, 1)
-    #         # else :
-    #         #     preds = (outputs > 0.5).float()
-    #         # print(preds)
-    #         break
+    # input = testDataset.__getitem__(1)['img_full_add_img_aligin'].to(device).unsqueeze(0)
+    # print(testDataset.__getitem__(1)['path_image'])
+    # with torch.no_grad():
+    #     output = model(input)
+    #     if args.activation == 'sigmoid':
+    #             output = output.to('cpu').numpy()
+    #     else :
+    #             output = output.softmax(1).to('cpu').numpy()
+    #     print(output)
+    for inputs in tqdm(testLoader):
+        input = inputs['img_full_add_img_aligin'].to(device)
+        with torch.no_grad() : 
+            output = model(input)
+            if args.activation == 'sigmoid':
+                output = output.to('cpu').numpy()
+            else :
+                output = output.softmax(1).to('cpu').numpy()
+            for i in range(args.batch_size):
+                print(output[i][-1], inputs['path_image'][i].split('/')[-1])
+            break
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
