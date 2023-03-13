@@ -1,11 +1,17 @@
-python predict.py    --save_txt True \
-                    --path_data /mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data \
+python predict.py   --save_txt True \
                     --path_save results \
-                    --parse dev \
+                    --parse test \
                     --load_height 224 \
                     --load_width 128 \
                     --load_checkpoint True \
                     --checkpoint_dir checkpoints \
                     --name_model alexnet \
-                    --num_train 1 \
-                    --num_ckp best_epoch
+                    --num_train 010 \
+                    --num_ckpt best_epoch \
+                    --threshold 1 \
+                    --img_input img_full_add_img_align \
+                    --batch_size 16 \
+                    --num_workers 2 \
+                    --nb_classes 2 \
+                    --combine 022 \
+                    --activation linear

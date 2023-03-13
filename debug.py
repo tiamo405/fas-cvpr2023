@@ -259,6 +259,7 @@ def datset() :
     model.load_state_dict(torch.load(checkpoint_model)['model_state_dict'])
     model.to(device)
     model.eval()
+    print(model)
     # input = testDataset.__getitem__(1)['img_full_add_img_aligin'].to(device).unsqueeze(0)
     # print(testDataset.__getitem__(1)['path_image'])
     # with torch.no_grad():
@@ -276,7 +277,7 @@ def datset() :
                 output = output.to('cpu').numpy()
             else :
                 output = output.softmax(1).to('cpu').numpy()
-            for i in range(args.batch_size):
+            for i in range(len(input)):
                 print(output[i][-1], inputs['path_image'][i].split('/')[-1])
             break
 if __name__ == "__main__" :

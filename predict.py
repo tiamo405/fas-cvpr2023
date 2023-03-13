@@ -16,7 +16,8 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dataset.utils import align_face, read_txt
 from src.utils import write_txt, save_zip, str2bool
 from tqdm import tqdm
-
+from dataset.dataset_test import FasDatasetTest
+from torch.utils.data import DataLoader
 class Model():
 
     def __init__(self, args = None):
@@ -55,32 +56,32 @@ class Model():
         left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         
         img_rate = img_full[top: bottom, left: right, :]
-        img_aligin = align_face(img_full, dst)
+        img_align = align_face(img_full, dst)
         img_rate   =cv2.resize(img_rate, (self.load_width, self.load_height))
         img_full  =cv2.resize(img_full, (self.load_width, self.load_height))
-        img_aligin = cv2.resize(img_aligin, (self.load_width, self.load_height))
+        img_align = cv2.resize(img_align, (self.load_width, self.load_height))
 
-        img_full_add_img_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
-        img_rate_add_img_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
+        img_rate_add_img_align         = np.concatenate((img_rate, img_align), axis= 1)
         
         img_full                         = Image.fromarray(img_full)
-        img_aligin                      = Image.fromarray(img_aligin)
+        img_align                      = Image.fromarray(img_align)
         img_rate                        = Image.fromarray(img_rate)
-        img_full_add_img_aligin           = Image.fromarray(img_full_add_img_aligin )
-        img_rate_add_img_aligin           = Image.fromarray(img_rate_add_img_aligin)
+        img_full_add_img_align           = Image.fromarray(img_full_add_img_align )
+        img_rate_add_img_align           = Image.fromarray(img_rate_add_img_align)
 
         img_full                         = self.transform(img_full)
-        img_aligin                      = self.transform(img_aligin)
+        img_align                      = self.transform(img_align)
         img_rate                        = self.transform(img_rate)
-        img_full_add_img_aligin           = self.transform(img_full_add_img_aligin )
-        img_rate_add_img_aligin          = self.transform(img_rate_add_img_aligin)
+        img_full_add_img_align           = self.transform(img_full_add_img_align )
+        img_rate_add_img_align          = self.transform(img_rate_add_img_align)
 
         if self.input == 'img_full' :
             return img_full.to(self.device).unsqueeze(0)
-        elif self.input == 'img_full_add_img_aligin' :
-            return img_full_add_img_aligin .to(self.device).unsqueeze(0)
+        elif self.input == 'img_full_add_img_align' :
+            return img_full_add_img_align .to(self.device).unsqueeze(0)
         else:
-            return img_rate_add_img_aligin.to(self.device).unsqueeze(0)
+            return img_rate_add_img_align.to(self.device).unsqueeze(0)
     def predict(self, path_image):
         input = self.preprocess(path_image)
         with torch.no_grad():
@@ -93,7 +94,81 @@ class Model():
         score = np.mean(output, axis=0)
         return score
 
-def pred(args, folder_save) :
+def pred_new(args, folder_save) :
+    path_save_txt = os.path.join(folder_save, 'submit.txt')
+    if args.parse == 'dev' : 
+        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
+        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
+        
+    else : 
+        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
+        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
+        shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
+    model = Model(args = args).model
+    print(model)
+    testDataset = FasDatasetTest(args)
+    testLoader = DataLoader(testDataset, batch_size=args.batch_size, \
+                            num_workers= args.num_workers, shuffle= False)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    fnames = []
+    with open(args.path_txt, 'r') as f :
+        for line in f :
+            fnames.append(line.split()[0])
+    scores = []
+    path = []
+    # for fname in tqdm(fnames) :
+    for inputs in tqdm(testLoader):
+        # path_image = os.path.join(args.path_data, fname)
+        # score = model.predict(path_image= path_image)
+
+        if args.img_input == 'img_full_add_img_align':
+            input = inputs['img_full_add_img_align'].to(device)
+        if args.img_input == 'img_full':
+            input = inputs['img_full'].to(device)
+        if args.img_input == 'img_rate_add_img_align':
+            input = inputs['img_rate_add_img_align'].to(device)
+        with torch.no_grad() :
+            output = model(input)
+            if args.activation == 'sigmoid':
+                scores = output.to('cpu').numpy()
+            else :
+                scores = output.softmax(1).to('cpu').numpy()
+        for i in range(len(input)):
+            fname = inputs['path_image'][i].split('/')[-1]
+            score = scores[i]
+            if args.save_txt :
+                if args.activation == 'linear':
+                    if args.nb_classes == 2 :
+                        # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
+                        #   path= path_save_txt)
+                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                        path= path_save_txt)
+                        # if score[1] >= args.threshold : 
+                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                        #     path= path_save_txt)
+                        # else :
+                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                        # path= path_save_txt)
+                    else :
+                        if score[1] >= args.threshold : 
+                            write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                            path= path_save_txt)
+                        else :
+                            write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                        path= path_save_txt)
+                        # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                        # path= path_save_txt)
+                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
+                    #       path= path_save_txt)
+                else :
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
+                        path= path_save_txt)
+    if args.save_txt :
+        save_zip(folder_save= folder_save)
+        print('save success {}'.format(folder_save))
+
+def pred_old(args, folder_save) :
     path_save_txt = os.path.join(folder_save, 'submit.txt')
     if args.parse == 'dev' : 
         args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
@@ -131,13 +206,19 @@ def pred(args, folder_save) :
                     #   path= path_save_txt)
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
                       path= path_save_txt)
-                    if score[1] >= args.threshold : 
-                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                        path= path_save_txt)
-                    else :
-                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
-                      path= path_save_txt)
+                    # if score[1] >= args.threshold : 
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                    #     path= path_save_txt)
+                    # else :
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                    #   path= path_save_txt)
                 else :
+                    # if score[1] >= args.threshold : 
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                    #     path= path_save_txt)
+                    # else :
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                    #   path= path_save_txt)
                     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
                       path= path_save_txt)
                 # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
@@ -166,16 +247,18 @@ def get_args_parser():
     parser.add_argument('--name_model', type=str, default= 'alexnet')
     parser.add_argument('--num_train', type= str)
     parser.add_argument('--num_ckpt', type=str)
-    parser.add_argument('--threshold', type= float, default= 0.998)
+    parser.add_argument('--threshold', type= float, default= 0.75)
 
     #data
     parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
-    parser.add_argument('--img_input', type=str, default='img_rate_add_img_aligin', \
-                        choices=['img_full','img_full_add_img_aligin', 'img_rate_add_img_aligin'])
+    parser.add_argument('--img_input', type=str, default='img_full_add_img_align', \
+                        choices=['img_full','img_full_add_img_align', 'img_rate_add_img_align'])
     parser.add_argument('--rate', type=float, default=1.2)
-    parser.add_argument('--combine', type= str, default= '016')
+    parser.add_argument('--batch_size', type=int, default= 16)
+    parser.add_argument('--num_workers', type=int, default=2)
+    parser.add_argument('--combine', type= str, default= '019')
     
     
     args = parser.parse_args()
@@ -205,7 +288,8 @@ if __name__ == "__main__" :
         arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
         write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
     start_time = time.time()
-    pred(folder_save = folder_save, args= args)
+    # pred_old(folder_save = folder_save, args= args)
+    pred_new(folder_save = folder_save, args= args)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Predict time {}'.format(total_time_str))

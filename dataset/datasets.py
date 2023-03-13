@@ -147,44 +147,47 @@ class FasDataset(data.Dataset):
         # print(path_image)
         img_full = cv2.imread(path_image) # anh full
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) # chuyen mau
-        (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
+        try :
+            (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
+        except : 
+             (left, top), (right, bottom), dst = read_txt(path_image.replace('.png', '.txt'))
         left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         # print(img.shape)
-        img_aligin      = align_face(img_full, dst) # ảnh face
+        img_align      = align_face(img_full, dst) # ảnh face
         img_rate = img_full[top: bottom, left: right, :]
 
         img_full                         =cv2.resize(img_full, (self.load_width, self.load_height))
         img_rate                        =cv2.resize(img_rate, (self.load_width, self.load_height))
-        img_aligin                      = cv2.resize(img_aligin, (self.load_width, self.load_height))
+        img_align                      = cv2.resize(img_align, (self.load_width, self.load_height))
         
-        img_full_add_img_aligin         = np.concatenate((img_full, img_aligin), axis= 1)
-        img_rate_add_img_aligin         = np.concatenate((img_rate, img_aligin), axis= 1)
+        img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
+        img_rate_add_img_align         = np.concatenate((img_rate, img_align), axis= 1)
         # đưa về cùng kích cỡ width*2, height
         # img_full             =cv2.resize(img_full, (self.load_width*2, self.load_height))
         # img_rate                        =cv2.resize(img_rate, (self.load_width*2, self.load_height))
-        # img_aligin                      = cv2.resize(img_aligin, (self.load_width*2, self.load_height))
+        # img_align                      = cv2.resize(img_align, (self.load_width*2, self.load_height))
         # cv2 to Image PIL
         img_full                         = Image.fromarray(img_full)
-        img_aligin                      = Image.fromarray(img_aligin)
+        img_align                      = Image.fromarray(img_align)
         img_rate                        = Image.fromarray(img_rate)
-        img_full_add_img_aligin          = Image.fromarray(img_full_add_img_aligin)
-        img_rate_add_img_aligin           = Image.fromarray(img_rate_add_img_aligin)
+        img_full_add_img_align          = Image.fromarray(img_full_add_img_align)
+        img_rate_add_img_align           = Image.fromarray(img_rate_add_img_align)
 
         # transform
         img_full                         = self.transform(img_full)
-        img_aligin                  = self.transform(img_aligin)
+        img_align                  = self.transform(img_align)
         img_rate                        = self.transform(img_rate)
-        img_full_add_img_aligin               = self.transform(img_full_add_img_aligin)
-        img_rate_add_img_aligin               = self.transform(img_rate_add_img_aligin)
+        img_full_add_img_align               = self.transform(img_full_add_img_align)
+        img_rate_add_img_align               = self.transform(img_rate_add_img_align)
 
 
         result = {
             'path_image' : path_image,
             'label' : label,
-            'img_pil_aligin' : img_aligin,
+            'img_pil_align' : img_align,
             'img_full' : img_full,
-            'img_full_add_img_aligin' : img_full_add_img_aligin,
-            'img_rate_add_img_aligin' : img_rate_add_img_aligin
+            'img_full_add_img_align' : img_full_add_img_align,
+            'img_rate_add_img_align' : img_rate_add_img_align
         }
         return result
     
