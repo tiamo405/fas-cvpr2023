@@ -6,8 +6,9 @@ import numpy as np
 import os
 import torchvision
 import datetime
-
+import shutil
 import time
+
 from torch import nn
 from torchvision import transforms
 from PIL import Image
@@ -47,7 +48,7 @@ class Model():
                                         transforms.Resize((self.load_height, self.load_width)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
-        self.input = args.input
+        self.input = args.img_input
         self.rate = args.rate
         self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
@@ -58,7 +59,10 @@ class Model():
 
     def preprocess(self, path_image):
         img_full = cv2.imread(path_image)
-        (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
+        try :
+            (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
+        except :
+            (left, top), (right, bottom), dst = read_txt(path_image.replace('.png', '.txt'))
         left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         
         img_rate = img_full[top: bottom, left: right, :]
@@ -102,7 +106,14 @@ class Model():
 
 def pred(args, folder_save) :
     path_save_txt = os.path.join(folder_save, 'submit.txt')
-
+    if args.parse == 'dev' : 
+        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
+        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
+        
+    else : 
+        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
+        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
+        shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
     model = Model(args = args)
     print(model.model)
     path_txt = args.path_txt
@@ -117,8 +128,8 @@ def pred(args, folder_save) :
         path_image = os.path.join(args.path_data, fname)
         score = model.predict(path_image= path_image)
         # print(score)
-        scores.append(score[-1])
-        path.append(args.parse + '/'+ fname)
+        # scores.append(score[-1])
+        # path.append(args.parse + '/'+ fname)
         # if args.activation == 'linear':
         #     print(f'path: {fname}, score: {score} ', end='')
         #     print('label: ', 'living' if np.argmax(score) == 1 else 'spoof')
@@ -168,10 +179,10 @@ def get_args_parser():
     parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
-    parser.add_argument('--input', type=str, default='img_full', choices=['img_full'\
+    parser.add_argument('--img_input', type=str, default='img_add_img_full_aligin', choices=['img_full'\
                         ,'img_add_img_full_aligin', 'img_add_img_rate_aligin'])
     parser.add_argument('--rate', type=float, default=1.2)
-    
+    parser.add_argument('--combine', type= str, default= '016')
     
     
     args = parser.parse_args()
