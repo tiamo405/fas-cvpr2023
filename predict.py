@@ -34,7 +34,7 @@ class Model():
         self.load_height = args.load_height
         self.load_width = args.load_width
         self.transform = transforms.Compose([
-                                        transforms.Resize((self.load_height, self.load_width)),
+                                        # transforms.Resize((self.load_height, self.load_width)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
         self.input = args.img_input
@@ -94,7 +94,8 @@ class Model():
         score = np.mean(output, axis=0)
         return score
 
-def pred_new(args, folder_save) :
+
+def pred_old(args, folder_save) :
     path_save_txt = os.path.join(folder_save, 'submit.txt')
     if args.parse == 'dev' : 
         args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
@@ -104,8 +105,73 @@ def pred_new(args, folder_save) :
         args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
         args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
         shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
+    model = Model(args = args)
+    print(model.model)
+    fnames = []
+    with open(args.path_txt, 'r') as f :
+        for line in f :
+            fnames.append(line.split()[0])
+    scores = []
+    path = []
+    for fname in tqdm(fnames) :
+        path_image = os.path.join(args.path_data, fname)
+        score = model.predict(path_image= path_image)
+        # print(score)
+        # scores.append(score[-1])
+        # path.append(args.parse + '/'+ fname)
+        # if args.activation == 'linear':
+        #     print(f'path: {fname}, score: {score} ', end='')
+        #     print('label: ', 'living' if np.argmax(score) == 1 else 'spoof')
+        # else :
+        #     print(f'path: {fname}, score: {score} ', end= '')
+        #     print('label: ','living' if score[0] > args.threshold else 'spoof' )
+
+        if args.save_txt :
+            if args.activation == 'linear':
+                if args.nb_classes == 2 :
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
+                      path= path_save_txt)
+                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                    #   path= path_save_txt)
+                    # if score[1] >= args.threshold : 
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                    #     path= path_save_txt)
+                    # else :
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                    #   path= path_save_txt)
+                else :
+                    # if score[1] >= args.threshold : 
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                    #     path= path_save_txt)
+                    # else :
+                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                    #   path= path_save_txt)
+                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                      path= path_save_txt)
+                # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
+                #       path= path_save_txt)
+            else :
+                write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
+                      path= path_save_txt)
+    if args.save_txt :
+        save_zip(folder_save= folder_save)
+        print('save success {}'.format(folder_save))
+#----------------------------
+
+def pred_new(args, folder_save) :
+    path_save_txt = os.path.join(folder_save, 'submit.txt')
+    if args.parse == 'dev' : 
+        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
+        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
+        
+    else : 
+        # args.path_txt = "data/txt/Test.txt"
+        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
+        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
+        shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
     model = Model(args = args).model
     print(model)
+    print(model.training)
     testDataset = FasDatasetTest(args)
     testLoader = DataLoader(testDataset, batch_size=args.batch_size, \
                             num_workers= args.num_workers, shuffle= False)
@@ -167,73 +233,11 @@ def pred_new(args, folder_save) :
     if args.save_txt :
         save_zip(folder_save= folder_save)
         print('save success {}'.format(folder_save))
-
-def pred_old(args, folder_save) :
-    path_save_txt = os.path.join(folder_save, 'submit.txt')
-    if args.parse == 'dev' : 
-        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
-        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
-        
-    else : 
-        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
-        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
-        shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
-    model = Model(args = args)
-    print(model.model)
-    fnames = []
-    with open(args.path_txt, 'r') as f :
-        for line in f :
-            fnames.append(line.split()[0])
-    scores = []
-    path = []
-    for fname in tqdm(fnames) :
-        path_image = os.path.join(args.path_data, fname)
-        score = model.predict(path_image= path_image)
-        # print(score)
-        # scores.append(score[-1])
-        # path.append(args.parse + '/'+ fname)
-        # if args.activation == 'linear':
-        #     print(f'path: {fname}, score: {score} ', end='')
-        #     print('label: ', 'living' if np.argmax(score) == 1 else 'spoof')
-        # else :
-        #     print(f'path: {fname}, score: {score} ', end= '')
-        #     print('label: ','living' if score[0] > args.threshold else 'spoof' )
-
-        if args.save_txt :
-            if args.activation == 'linear':
-                if args.nb_classes == 2 :
-                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
-                    #   path= path_save_txt)
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
-                      path= path_save_txt)
-                    # if score[1] >= args.threshold : 
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                    #     path= path_save_txt)
-                    # else :
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
-                    #   path= path_save_txt)
-                else :
-                    # if score[1] >= args.threshold : 
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                    #     path= path_save_txt)
-                    # else :
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
-                    #   path= path_save_txt)
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                      path= path_save_txt)
-                # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
-                #       path= path_save_txt)
-            else :
-                write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
-                      path= path_save_txt)
-    if args.save_txt :
-        save_zip(folder_save= folder_save)
-        print('save success {}'.format(folder_save))
-
 def get_args_parser():
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--save_txt', type= str2bool, default=True)
+    parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
     #path, dir
     parser.add_argument('--path_data', type= str, default= '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data')
     parser.add_argument('--path_save', type= str, default= 'results')
@@ -250,7 +254,7 @@ def get_args_parser():
     parser.add_argument('--threshold', type= float, default= 0.75)
 
     #data
-    parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
+    parser.add_argument('--resize', type=str2bool, default=True)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--img_input', type=str, default='img_full_add_img_align', \

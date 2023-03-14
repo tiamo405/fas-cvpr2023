@@ -114,7 +114,7 @@ class FasDataset(data.Dataset):
         self.transform = transforms.Compose([
             #ColorJitter() thực hiện việc thay đổi độ sáng, 
             # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
-            
+            transforms.ToPILImage(),
             transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
             transforms.Resize((self.load_height, self.load_width)),
             transforms.ToTensor(),
@@ -166,12 +166,12 @@ class FasDataset(data.Dataset):
         # img_full             =cv2.resize(img_full, (self.load_width*2, self.load_height))
         # img_rate                        =cv2.resize(img_rate, (self.load_width*2, self.load_height))
         # img_align                      = cv2.resize(img_align, (self.load_width*2, self.load_height))
-        # cv2 to Image PIL
-        img_full                         = Image.fromarray(img_full)
-        img_align                      = Image.fromarray(img_align)
-        img_rate                        = Image.fromarray(img_rate)
-        img_full_add_img_align          = Image.fromarray(img_full_add_img_align)
-        img_rate_add_img_align           = Image.fromarray(img_rate_add_img_align)
+        # # cv2 to Image PIL
+        # img_full                         = Image.fromarray(img_full)
+        # img_align                      = Image.fromarray(img_align)
+        # img_rate                        = Image.fromarray(img_rate)
+        # img_full_add_img_align          = Image.fromarray(img_full_add_img_align)
+        # img_rate_add_img_align           = Image.fromarray(img_rate_add_img_align)
 
         # transform
         img_full                         = self.transform(img_full)

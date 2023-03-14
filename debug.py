@@ -12,7 +12,7 @@ import argparse
 from dataset.utils import read_txt, align_face
 from src.utils import str2bool
 from torch.utils.data import DataLoader
-
+from src.utils import write_txt
 def checkReturn():
     a = 2
     b = 3
@@ -236,7 +236,7 @@ def get_args_parser():
     
     args = parser.parse_args()
     return args
-def datset() :
+def dataset() :
     args = get_args_parser()
     from dataset.dataset_test import FasDatasetTest
     from predict import Model, pred
@@ -280,6 +280,12 @@ def datset() :
             for i in range(len(input)):
                 print(output[i][-1], inputs['path_image'][i].split('/')[-1])
             break
+def test_submit() :
+    import shutil
+    shutil.copy('results/dev/016/submit.txt', 'results')
+    with open("/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt", 'r') as f :
+        for line in f :
+            write_txt('test/'+line.split()[0]+ ' ' + '0', 'results/submit.txt')
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -291,4 +297,5 @@ if __name__ == "__main__" :
     # check_point()
     # parper_photo_poster()
     # checkdata()
-    datset()
+    # dataset()
+    test_submit()

@@ -33,17 +33,23 @@ class FasDatasetTest(data.Dataset):
         self.input = args.img_input
         self.rate = args.rate
         self.path_txt = args.path_txt
-
-        self.transform = transforms.Compose([
-            #ColorJitter() thực hiện việc thay đổi độ sáng, 
-            # độ tương phản, độ bão hòa màu và màu sắc của hình ảnh.
-            transforms.ToPILImage(),
-            # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
-            transforms.Resize((self.load_height, self.load_width)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-            
-        ])
+        self.resize = args.resize
+        if self.resize :
+            self.transform = transforms.Compose([
+                transforms.ToPILImage(),
+                # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                transforms.Resize((self.load_height, self.load_width)),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+                
+            ])
+        else : 
+            self.transform = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+                
+            ])
         self.rate = args.rate
         self.nb_classes = args.nb_classes
         path_image_s = []
