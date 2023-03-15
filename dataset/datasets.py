@@ -69,26 +69,26 @@ class FasDataset(data.Dataset):
             (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
         except : 
              (left, top), (right, bottom), dst = read_txt(path_image.replace('.png', '.txt'))
-        left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
+        # left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         # print(img.shape)
         img_align      = align_face(img_full, dst) # ảnh face
-        img_rate = img_full[top: bottom, left: right, :]
+        img_face = img_full[top: bottom, left: right, :]
 
         img_full                         =cv2.resize(img_full, (self.load_width, self.load_height))
-        img_rate                        =cv2.resize(img_rate, (self.load_width, self.load_height))
+        img_face                        =cv2.resize(img_face, (self.load_width, self.load_height))
         img_align                      = cv2.resize(img_align, (self.load_width, self.load_height))
         
         img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
-        img_rate_add_img_align         = np.concatenate((img_rate, img_align), axis= 1)
+        img_face_add_img_align         = np.concatenate((img_face, img_align), axis= 1)
         
 
 
         # transform
         img_full                         = self.transform(img_full)
         img_align                  = self.transform(img_align)
-        img_rate                        = self.transform(img_rate)
+        img_face                        = self.transform(img_face)
         img_full_add_img_align               = self.transform(img_full_add_img_align)
-        img_rate_add_img_align               = self.transform(img_rate_add_img_align)
+        img_face_add_img_align               = self.transform(img_face_add_img_align)
 
         result = {
             'path_image' : path_image,
@@ -96,7 +96,7 @@ class FasDataset(data.Dataset):
             'img_align' : img_align,
             'img_full' : img_full,
             'img_full_add_img_align' : img_full_add_img_align,
-            'img_rate_add_img_align' : img_rate_add_img_align
+            'img_face_add_img_align' : img_face_add_img_align
         }
         return result
     

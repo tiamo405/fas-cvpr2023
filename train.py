@@ -130,8 +130,8 @@ def train(args, lenFolder):
                     input = inputs['img_full_add_img_align'].to(device)
                 if args.img_input == 'img_full':
                     input = inputs['img_full'].to(device)
-                if args.img_input == 'img_rate_add_img_align':
-                    input = inputs['img_rate_add_img_align'].to(device)
+                if args.img_input == 'img_face_add_img_align':
+                    input = inputs['img_face_add_img_align'].to(device)
                 if args.img_input == 'img_align' :
                     input = inputs['img_align'].to(device)
                 if args.activation == 'linear' :
@@ -239,8 +239,8 @@ def get_args_parser():
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--img_input', type=str, default='img_rate_add_img_align', \
-                        choices=['img_full','img_full_add_img_align', 'img_rate_add_img_align', 'img_align', 'img_full'])
+    parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
+                        choices=['img_full','img_full_add_img_align', 'img_face_add_img_align', 'img_align', 'img_full'])
     
     #mixup
     parser.add_argument('--mixup', type=float, default=0.0,

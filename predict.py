@@ -70,26 +70,26 @@ class Model():
         img_align = cv2.resize(img_align, (self.load_width, self.load_height))
 
         img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
-        img_rate_add_img_align         = np.concatenate((img_rate, img_align), axis= 1)
+        img_face_add_img_align         = np.concatenate((img_rate, img_align), axis= 1)
         
         img_full                         = Image.fromarray(img_full)
         img_align                      = Image.fromarray(img_align)
         img_rate                        = Image.fromarray(img_rate)
         img_full_add_img_align           = Image.fromarray(img_full_add_img_align )
-        img_rate_add_img_align           = Image.fromarray(img_rate_add_img_align)
+        img_face_add_img_align           = Image.fromarray(img_face_add_img_align)
 
         img_full                         = self.transform(img_full)
         img_align                      = self.transform(img_align)
         img_rate                        = self.transform(img_rate)
         img_full_add_img_align           = self.transform(img_full_add_img_align )
-        img_rate_add_img_align          = self.transform(img_rate_add_img_align)
+        img_face_add_img_align          = self.transform(img_face_add_img_align)
 
         if self.input == 'img_full' :
             return img_full.to(self.device).unsqueeze(0)
         elif self.input == 'img_full_add_img_align' :
             return img_full_add_img_align .to(self.device).unsqueeze(0)
         else:
-            return img_rate_add_img_align.to(self.device).unsqueeze(0)
+            return img_face_add_img_align.to(self.device).unsqueeze(0)
     def predict(self, path_image):
         input = self.preprocess(path_image)
         with torch.no_grad():
@@ -200,8 +200,8 @@ def pred_new(args, folder_save) :
             input = inputs['img_full_add_img_align'].to(device)
         if args.img_input == 'img_full':
             input = inputs['img_full'].to(device)
-        if args.img_input == 'img_rate_add_img_align':
-            input = inputs['img_rate_add_img_align'].to(device)
+        if args.img_input == 'img_face_add_img_align':
+            input = inputs['img_face_add_img_align'].to(device)
         
         with torch.no_grad() :
             output = model(input)
@@ -267,7 +267,7 @@ def get_args_parser():
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--img_input', type=str, default='img_full_add_img_align', \
-                        choices=['img_full','img_full_add_img_align', 'img_rate_add_img_align'])
+                        choices=['img_full','img_full_add_img_align', 'img_face_add_img_align'])
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--batch_size', type=int, default= 16)
     parser.add_argument('--num_workers', type=int, default=2)
