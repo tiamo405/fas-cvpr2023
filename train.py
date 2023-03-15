@@ -126,14 +126,15 @@ def train(args, lenFolder):
             running_loss = 0.0
             running_corrects = 0
             for inputs in tqdm(dataLoader[phase]):
-                if args.img_input == 'img_full_add_img_align':
-                    input = inputs['img_full_add_img_align'].to(device)
-                if args.img_input == 'img_full':
-                    input = inputs['img_full'].to(device)
-                if args.img_input == 'img_face_add_img_align':
-                    input = inputs['img_face_add_img_align'].to(device)
-                if args.img_input == 'img_align' :
-                    input = inputs['img_align'].to(device)
+                # if args.img_input == 'img_full_add_img_align':
+                #     input = inputs['img_full_add_img_align'].to(device)
+                # if args.img_input == 'img_full':
+                #     input = inputs['img_full'].to(device)
+                # if args.img_input == 'img_face_add_img_align':
+                #     input = inputs['img_face_add_img_align'].to(device)
+                # if args.img_input == 'img_align' :
+                #     input = inputs['img_align'].to(device)
+                input  = inputs[args.img_input].to(device)
                 if args.activation == 'linear' :
                     labels = inputs['label'].to(device)
                 else :    
@@ -240,7 +241,7 @@ def get_args_parser():
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--num_workers', default=2, type=int)
     parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
-                        choices=['img_full','img_full_add_img_align', 'img_face_add_img_align', 'img_align', 'img_full'])
+                        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align'])
     
     #mixup
     parser.add_argument('--mixup', type=float, default=0.0,
