@@ -16,61 +16,16 @@ from PIL import Image
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-# from timm.models import create_model
+
 from optim_factory import create_optimizer, LayerDecayValueAssigner
 from losses import ArcFace, Poly1CrossEntropyLoss
 from src import utils
-from src.utils import write_txt
+from src.utils import write_txt, str2bool
 from dataset.datasets import FasDataset
-from src.utils import create_model
+
 from torch.optim import lr_scheduler
 
-def str2bool(v):
-    """
-    Converts string to bool type; enables command line 
-    arguments in the format of '--arg1 true --arg2 false'
-    """
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
     
-
-class Model():
-
-    def __init__(self, name='convnext_tiny', checkpoint_model='', model_prefix='', size=224):
-        self.model = create_model(name)
-        self.tfms = transforms.Compose([transforms.Resize(size), 
-                                        # transforms.CenterCrop(size),
-                                        transforms.ToTensor(),
-                                        transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
-
-        self.model.load_state_dict(torch.load(checkpoint_model)['model'])
-        self.model.to('cuda:0')
-        self.model.eval()
-
-    def preprocess(self, x):
-        inputs = []
-        for xi in x:
-            xi = cv2.imwrite("test.jpg", xi)
-            img = self.tfms(Image.open('test.jpg')).cuda()
-            # xi = self.tfms(Image.fromarray(xi[:,:,::-1]))
-            inputs.append(img)
-        inputs = torch.stack(inputs, dim=0)
-        return inputs
-
-    def predict(self, x):
-        x = self.preprocess(x)
-        with torch.no_grad():
-            output = self.model(x)
-            output = output.softmax(1).to('cpu').numpy()
-        score = np.mean(output, axis=0)
-        return score
-
 def train(args, lenFolder):
     Dataset = FasDataset(args)
     train_size = int(0.8 * len(Dataset))
@@ -213,21 +168,35 @@ def train(args, lenFolder):
                 best_model_wts = copy.deepcopy(model.state_dict())
                 best_epoch = epoch
             if epoch % args.num_save_ckpt ==0 or epoch == args.epochs or epoch == 1:
-                torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': loss,
-            }, os.path.join(args.checkpoint_dir, args.name_model, \
-                            lenFolder,\
-                                str(epoch)+'.pth'))
+                if args.train_on == 'ssh' :
+                    torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss,
+                    }, os.path.join(args.checkpoint_dir, args.name_model, \
+                                lenFolder,\
+                                    str(epoch)+'.pth'))
+                else :
+                    torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': loss,
+                }, str(epoch)+ args.activation +'.pth')
             
     model.load_state_dict(best_model_wts)
-    torch.save({
-        'epoch': best_epoch,
-        'model_state_dict': model.state_dict(),
-    }, os.path.join(args.checkpoint_dir, args.name_model, \
-                            lenFolder, ("best_epoch"+".pth"))) 
+    if args.train_on == 'ssh' :
+        torch.save({
+            'epoch': best_epoch,
+            'model_state_dict': model.state_dict(),
+        }, os.path.join(args.checkpoint_dir, args.name_model, \
+                                lenFolder, ("best_epoch"+".pth"))) 
+    else : 
+        torch.save({
+            'epoch': best_epoch,
+            'model_state_dict': model.state_dict(),
+        }, ("best_epoch"+ args.activation +".pth"))
         
 def get_args_parser():
     parser = argparse.ArgumentParser()
@@ -235,7 +204,7 @@ def get_args_parser():
                         help='Per GPU batch size')
     parser.add_argument('--epochs', default=20, type=int)
     parser.add_argument('--parse', type=str, default= 'train')
-    
+    parser.add_argument('--train_on', type=str, default='kaggle', choices=['kaggle', 'ssh'])
     # path, dir
     parser.add_argument('--checkpoint_dir', type= str, default='checkpoints')
     parser.add_argument('--path_data', default='data/train', type=str,
@@ -318,19 +287,24 @@ def get_args_parser():
 if __name__ == '__main__':
     args = get_args_parser()
     print('\n'.join(map(str,(str(args).split('(')[1].split(',')))))
-    if not os.path.exists(args.checkpoint_dir) :
-        os.mkdir(args.checkpoint_dir)
+    lenFolder = ''
+    if args.train_on == 'ssh' :
+        if not os.path.exists(args.checkpoint_dir) :
+            os.mkdir(args.checkpoint_dir)
 
-    if not os.path.exists(os.path.join(args.checkpoint_dir, args.name_model)) :
-        os.mkdir(os.path.join(args.checkpoint_dir, args.name_model))
+        if not os.path.exists(os.path.join(args.checkpoint_dir, args.name_model)) :
+            os.mkdir(os.path.join(args.checkpoint_dir, args.name_model))
 
-    lenFolder = str(len(os.listdir(os.path.join(args.checkpoint_dir, args.name_model)))).zfill(3)
-    if args.save_ckpt :
-        os.mkdir(os.path.join(args.checkpoint_dir, args.name_model, \
-                          lenFolder))
+        lenFolder = str(len(os.listdir(os.path.join(args.checkpoint_dir, args.name_model)))).zfill(3)
+        if args.save_ckpt :
+            os.mkdir(os.path.join(args.checkpoint_dir, args.name_model, \
+                            lenFolder))
+            arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
+            write_txt(arg_save, os.path.join(args.checkpoint_dir, args.name_model,\
+                lenFolder, 'args.txt'), remove= True)
+    else :
         arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
-        write_txt(arg_save, os.path.join(args.checkpoint_dir, args.name_model,\
-            lenFolder, 'args.txt'), remove= True)
+        write_txt(arg_save, 'args.txt', remove= True)
     
     start_time = time.time()
     train(args= args, lenFolder = lenFolder)
