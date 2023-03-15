@@ -196,13 +196,15 @@ def pred_new(args, folder_save) :
         # path_image = os.path.join(args.path_data, fname)
         # score = model.predict(path_image= path_image)
 
-        if args.img_input == 'img_full_add_img_align':
-            input = inputs['img_full_add_img_align'].to(device)
-        if args.img_input == 'img_full':
-            input = inputs['img_full'].to(device)
-        if args.img_input == 'img_face_add_img_align':
-            input = inputs['img_face_add_img_align'].to(device)
-        
+        # if args.img_input == 'img_full_add_img_align':
+        #     input = inputs['img_full_add_img_align'].to(device)
+        # if args.img_input == 'img_face_add_img_align':
+        #     input = inputs['img_face_add_img_align'].to(device)
+        # if args.img_input == 'img_full':
+        #     input = inputs['img_full'].to(device)
+        # if args.umg_input == 'img_align' :
+        #     input = inputs['img_align'].to(device)
+        input  = inputs[args.img_input].to(device)
         with torch.no_grad() :
             output = model(input)
             if args.activation == 'sigmoid':
@@ -267,7 +269,7 @@ def get_args_parser():
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--img_input', type=str, default='img_full_add_img_align', \
-                        choices=['img_full','img_full_add_img_align', 'img_face_add_img_align'])
+                        choices=['img_full','img_full_add_img_align', 'img_face_add_img_align', 'img_face', 'img_align'])
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--batch_size', type=int, default= 16)
     parser.add_argument('--num_workers', type=int, default=2)

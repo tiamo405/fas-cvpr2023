@@ -94,6 +94,7 @@ class FasDataset(data.Dataset):
             'path_image' : path_image,
             'label' : label,
             'img_align' : img_align,
+            'img_face' : img_face,
             'img_full' : img_full,
             'img_full_add_img_align' : img_full_add_img_align,
             'img_face_add_img_align' : img_face_add_img_align
