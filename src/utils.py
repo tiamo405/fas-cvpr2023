@@ -420,8 +420,8 @@ def cosine_scheduler(base_value, final_value, epochs, niter_per_ep, warmup_epoch
 def write_txt(noidung, path, remove = False, space = True):
     if os.path.exists(path) and remove == True:
         os.remove(path)
-    if os.path.exists(os.path.join(*path.split('/')[:-1])) == False :
-        os.makedirs(os.path.join(*path.split('/')[:-1]))
+    # if os.path.exists(os.path.join(*path.split('/')[:-1])) == False :
+    #     os.makedirs(os.path.join(*path.split('/')[:-1]))
     with open(path, 'a') as f:
         if space :
             f.write("%s\n" % noidung)
