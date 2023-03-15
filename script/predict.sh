@@ -1,4 +1,4 @@
-python predict.py   --save_txt True \
+python predict.py   --save_txt true \
                     --parse test \
                     --path_save results \
                     --checkpoint_dir checkpoints \

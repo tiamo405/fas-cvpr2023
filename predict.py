@@ -24,6 +24,8 @@ class Model():
         self.model = torchvision.models.alexnet(pretrained = False)
         self.nb_classes = args.nb_classes
         self.activation = args.activation
+        self.resize = args.resize
+
         if self.activation == 'linear' :
             self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, self.nb_classes)
         else :
@@ -33,10 +35,16 @@ class Model():
                                         )
         self.load_height = args.load_height
         self.load_width = args.load_width
-        self.transform = transforms.Compose([
-                                        # transforms.Resize((self.load_height, self.load_width)),
-                                        transforms.ToTensor(),
-                                        transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
+        if self.resize == True :
+            self.transform = transforms.Compose([
+                                transforms.Resize((self.load_height, self.load_width)),
+                                transforms.ToTensor(),
+                                transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
+        else : 
+            self.transform = transforms.Compose([
+                                # transforms.Resize((self.load_height, self.load_width)),
+                                transforms.ToTensor(),
+                                transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
         self.input = args.img_input
         self.rate = args.rate
         
@@ -194,6 +202,7 @@ def pred_new(args, folder_save) :
             input = inputs['img_full'].to(device)
         if args.img_input == 'img_rate_add_img_align':
             input = inputs['img_rate_add_img_align'].to(device)
+        
         with torch.no_grad() :
             output = model(input)
             if args.activation == 'sigmoid':
@@ -208,13 +217,13 @@ def pred_new(args, folder_save) :
                     if args.nb_classes == 2 :
                         # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
                         #   path= path_save_txt)
-                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
+                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
                         path= path_save_txt)
                         # if score[1] >= args.threshold : 
-                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(1), 
                         #     path= path_save_txt)
                         # else :
-                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(0), 
                         # path= path_save_txt)
                     else :
                         if score[1] >= args.threshold : 
@@ -247,7 +256,7 @@ def get_args_parser():
     #model
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
     parser.add_argument('--nb_classes', type= int, default= 2)
-    parser.add_argument('--load_checkpoint', type= str2bool, default= False)
+    parser.add_argument('--load_checkpoint', type= str2bool, default= True)
     parser.add_argument('--name_model', type=str, default= 'alexnet')
     parser.add_argument('--num_train', type= str)
     parser.add_argument('--num_ckpt', type=str)

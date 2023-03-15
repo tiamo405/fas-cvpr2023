@@ -12,7 +12,7 @@ import argparse
 from dataset.utils import read_txt, align_face
 from src.utils import str2bool
 from torch.utils.data import DataLoader
-from src.utils import write_txt
+from src.utils import write_txt, save_zip
 def checkReturn():
     a = 2
     b = 3
@@ -123,7 +123,7 @@ def split_array() :
         }) 
         df.to_csv(path_save, index= False)
 
-def save_zip() :
+def ck_save_zip() :
     # for i in range(4, 10) :
     df = pd.read_csv("data/train/image_3D.csv")
     # df = pd.read_csv(os.path.join("data/part", str(i)+".csv"))
@@ -283,9 +283,34 @@ def dataset() :
 def test_submit() :
     import shutil
     shutil.copy('results/dev/016/submit.txt', 'results')
-    with open("/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt", 'r') as f :
+    with open("/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt", 'r') as f :
         for line in f :
             write_txt('test/'+line.split()[0]+ ' ' + '0', 'results/submit.txt')
+def changeThreshold(threshold) :
+    import shutil
+    with open("results/test/002/submit.txt", 'r') as f :
+        for line in f :
+            path, score = line.split()[0], float(line.split()[1])
+            if score >= threshold :
+                write_txt(path+ ' ' + '1', 'results/test/009/submit.txt')
+            else  :
+                write_txt(path+ ' ' + '0', 'results/test/009/submit.txt')
+    shutil.copy('results/test/002/args.txt', 'results/test/009')
+    save_zip('results/test/009')
+def ck_data_test():
+    path = []
+    with open("/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt", 'r') as f :
+        for line in f :
+            path.append(os.path.join("/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data", line.split()[0]))
+    # path = random.sample(path, 1000)
+    zip_filename = os.path.join("data/test", 'test2000image.zip')
+    with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for i in range(1000) :
+            arcname = path[i].split('/')[-1]
+            zipf.write(path[i], arcname)
+            zipf.write(path[i].replace('.png', '.txt'), arcname.replace('.png', '.txt'))
+            
+
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -298,4 +323,6 @@ if __name__ == "__main__" :
     # parper_photo_poster()
     # checkdata()
     # dataset()
-    test_submit()
+    # test_submit()
+    # changeThreshold(0.92)
+    ck_data_test()

@@ -34,7 +34,7 @@ class FasDatasetTest(data.Dataset):
         self.rate = args.rate
         self.path_txt = args.path_txt
         self.resize = args.resize
-        if self.resize :
+        if self.resize == True:
             self.transform = transforms.Compose([
                 transforms.ToPILImage(),
                 # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
