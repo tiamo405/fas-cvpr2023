@@ -216,7 +216,7 @@ def get_args_parser():
                         help='dataset path')
     
     # Model parameters
-    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet, resnet50'])
+    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet', 'resnet50'])
     parser.add_argument('--nb_classes', default=2, type=int,
                 help='number of the classification types')
     
