@@ -169,6 +169,7 @@ def pred_old(args, folder_save) :
 def pred_new(args, folder_save) :
     path_save_txt = os.path.join(folder_save, 'submit.txt')
     if args.parse == 'dev' : 
+        # args.path_txt = "data/txt/dev.txt"
         args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
         args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
         
@@ -176,7 +177,8 @@ def pred_new(args, folder_save) :
         # args.path_txt = "data/txt/Test.txt"
         args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
         args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
-        shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
+        if args.combine != '000' :
+            shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
     model = Model(args = args).model
     print(model)
     print(model.training)
@@ -193,17 +195,7 @@ def pred_new(args, folder_save) :
     path = []
     # for fname in tqdm(fnames) :
     for inputs in tqdm(testLoader):
-        # path_image = os.path.join(args.path_data, fname)
-        # score = model.predict(path_image= path_image)
 
-        # if args.img_input == 'img_full_add_img_align':
-        #     input = inputs['img_full_add_img_align'].to(device)
-        # if args.img_input == 'img_face_add_img_align':
-        #     input = inputs['img_face_add_img_align'].to(device)
-        # if args.img_input == 'img_full':
-        #     input = inputs['img_full'].to(device)
-        # if args.umg_input == 'img_align' :
-        #     input = inputs['img_align'].to(device)
         input  = inputs[args.img_input].to(device)
         with torch.no_grad() :
             output = model(input)
@@ -273,7 +265,7 @@ def get_args_parser():
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--batch_size', type=int, default= 16)
     parser.add_argument('--num_workers', type=int, default=2)
-    parser.add_argument('--combine', type= str, default= '019')
+    parser.add_argument('--combine', type= str, default= '016')
     
     
     args = parser.parse_args()
@@ -304,6 +296,11 @@ if __name__ == "__main__" :
         write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
     start_time = time.time()
     # pred_old(folder_save = folder_save, args= args)
+    if args.combine == '000' :
+        args.parse = 'dev'
+        pred_new(folder_save = folder_save, args= args)
+        args.parse = 'test'
+
     pred_new(folder_save = folder_save, args= args)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

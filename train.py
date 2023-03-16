@@ -29,7 +29,7 @@ from torch.optim import lr_scheduler
 class ResNetModified(nn.Module):
     def __init__(self, args):
         super(ResNetModified, self).__init__()
-        self.resnet = torchvision.models.resnet50(pretrained=False)
+        self.resnet = torchvision.models.resnet50(pretrained=args.pretrained)
         num_ftrs = self.resnet.fc.in_features
         self.resnet.fc = nn.Linear(num_ftrs, args.nb_classes)
 
@@ -40,7 +40,7 @@ class ResNetModified(nn.Module):
 class AlexnetModified(nn.Module) :
     def __init__(self, args):
         super(AlexnetModified, self).__init__()
-        self.model = torchvision.models.alexnet(pretrained = False)
+        self.model = torchvision.models.alexnet(pretrained = args.pretrained)
         if args.activation == 'linear' :
             self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
             criterion = nn.CrossEntropyLoss()
@@ -220,18 +220,20 @@ def get_args_parser():
     parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet, resnet50'])
     parser.add_argument('--nb_classes', default=2, type=int,
                 help='number of the classification types')
-    parser.add_argument('--lr', type=float, default=4e-3, metavar='LR',
-                        help='learning rate (default: 4e-3), with total batch size 4096')
-    parser.add_argument('--layer_decay', type=float, default=1.0)
-    parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR',
-                        help='lower lr bound for cyclic schedulers that hit 0 (1e-6)')
-    parser.add_argument('--warmup_epochs', type=int, default=20, metavar='N',
-                        help='epochs to warmup LR, if scheduler supports')
-    parser.add_argument('--warmup_steps', type=int, default=-1, metavar='N',
-                        help='num of steps to warmup LR, will overload warmup_epochs if set > 0')
+    
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
-    parser.add_argument('--update_freq', default=1, type=int,
-                        help='gradient accumulation steps')
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+                        help='learning rate (default: 4e-3), with total batch size 4096')
+    parser.add_argument('--num_workers', default=2, type=int)
+    # parser.add_argument('--layer_decay', type=float, default=1.0)
+    # parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR',
+    #                     help='lower lr bound for cyclic schedulers that hit 0 (1e-6)')
+    # parser.add_argument('--warmup_epochs', type=int, default=20, metavar='N',
+    #                     help='epochs to warmup LR, if scheduler supports')
+    # parser.add_argument('--warmup_steps', type=int, default=-1, metavar='N',
+    #                     help='num of steps to warmup LR, will overload warmup_epochs if set > 0')
+    # parser.add_argument('--update_freq', default=1, type=int,
+    #                     help='gradient accumulation steps')
     
     #checkpoint
     parser.add_argument('--pretrained', type=str2bool, default= False)
@@ -240,51 +242,50 @@ def get_args_parser():
     
 
     # Dataset parameters
-    parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
+    # parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)
-    parser.add_argument('--num_workers', default=2, type=int)
     parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
-                        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align'])
+        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align'])
     
     #mixup
-    parser.add_argument('--mixup', type=float, default=0.0,
-                        help='mixup alpha, mixup enabled if > 0.')
-    parser.add_argument('--cutmix', type=float, default=0.0,
-                        help='cutmix alpha, cutmix enabled if > 0.')
-    parser.add_argument('--cutmix_minmax', type=float, nargs='+', default=None,
-                        help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
-    parser.add_argument('--mixup_prob', type=float, default=0.0,
-                        help='Probability of performing mixup or cutmix when either/both is enabled')
-    parser.add_argument('--mixup_switch_prob', type=float, default=0.0,
-                        help='Probability of switching to cutmix when both mixup and cutmix enabled')
-    parser.add_argument('--mixup_mode', type=str, default='batch',
-                        help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
+    # parser.add_argument('--mixup', type=float, default=0.0,
+    #                     help='mixup alpha, mixup enabled if > 0.')
+    # parser.add_argument('--cutmix', type=float, default=0.0,
+    #                     help='cutmix alpha, cutmix enabled if > 0.')
+    # parser.add_argument('--cutmix_minmax', type=float, nargs='+', default=None,
+    #                     help='cutmix min/max ratio, overrides alpha and enables cutmix if set (default: None)')
+    # parser.add_argument('--mixup_prob', type=float, default=0.0,
+    #                     help='Probability of performing mixup or cutmix when either/both is enabled')
+    # parser.add_argument('--mixup_switch_prob', type=float, default=0.0,
+    #                     help='Probability of switching to cutmix when both mixup and cutmix enabled')
+    # parser.add_argument('--mixup_mode', type=str, default='batch',
+    #                     help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
     
-    # Augmentation parameters
-    parser.add_argument('--smoothing', type=float, default=0.1,
-                        help='Label smoothing (default: 0.1)')
+    # # Augmentation parameters
+    # parser.add_argument('--smoothing', type=float, default=0.1,
+    #                     help='Label smoothing (default: 0.1)')
     
-    # Optimization parameters
-    parser.add_argument('--opt', default='adamw', type=str, metavar='OPTIMIZER',
-                        help='Optimizer (default: "adamw"')
+    # # Optimization parameters
+    # parser.add_argument('--opt', default='adamw', type=str, metavar='OPTIMIZER',
+    #                     help='Optimizer (default: "adamw"')
 
-    parser.add_argument('--opt_eps', default=1e-8, type=float, metavar='EPSILON',
-                        help='Optimizer Epsilon (default: 1e-8)')
-    parser.add_argument('--opt_betas', default=None, type=float, nargs='+', metavar='BETA',
-                        help='Optimizer Betas (default: None, use opt default)')
-    parser.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
-                        help='Clip gradient norm (default: None, no clipping)')
-    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
-                        help='SGD momentum (default: 0.9)')
-    parser.add_argument('--weight_decay', type=float, default=0.05,
-                        help='weight decay (default: 0.05)')
-    parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
-        weight decay. We use a cosine schedule for WD and using a larger decay by
-        the end of training improves performance for ViTs.""")
-    parser.add_argument('--use_polyloss', action='store_true',
-                        help='Optimizer (default: "adamw"')
+    # parser.add_argument('--opt_eps', default=1e-8, type=float, metavar='EPSILON',
+    #                     help='Optimizer Epsilon (default: 1e-8)')
+    # parser.add_argument('--opt_betas', default=None, type=float, nargs='+', metavar='BETA',
+    #                     help='Optimizer Betas (default: None, use opt default)')
+    # parser.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
+    #                     help='Clip gradient norm (default: None, no clipping)')
+    # parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
+    #                     help='SGD momentum (default: 0.9)')
+    # parser.add_argument('--weight_decay', type=float, default=0.05,
+    #                     help='weight decay (default: 0.05)')
+    # parser.add_argument('--weight_decay_end', type=float, default=None, help="""Final value of the
+    #     weight decay. We use a cosine schedule for WD and using a larger decay by
+    #     the end of training improves performance for ViTs.""")
+    # parser.add_argument('--use_polyloss', action='store_true',
+    #                     help='Optimizer (default: "adamw"')
     
     opt = parser.parse_args()
     return opt
