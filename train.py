@@ -43,7 +43,6 @@ class AlexnetModified(nn.Module) :
         self.model = torchvision.models.alexnet(pretrained = args.pretrained)
         if args.activation == 'linear' :
             self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
-            criterion = nn.CrossEntropyLoss()
         else :
             self.model.classifier[-1] = nn.Sequential(
                                     nn.Linear(self.model.classifier[-1].in_features, 1),

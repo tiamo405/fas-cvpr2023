@@ -18,21 +18,50 @@ from src.utils import write_txt, save_zip, str2bool
 from tqdm import tqdm
 from dataset.dataset_test import FasDatasetTest
 from torch.utils.data import DataLoader
+class ResNetModified(nn.Module):
+    def __init__(self, args):
+        super(ResNetModified, self).__init__()
+        self.model = torchvision.models.resnet50(pretrained=args.pretrained)
+        num_ftrs = self.model.fc.in_features
+        self.model.fc = nn.Linear(num_ftrs, args.nb_classes)
+
+    def forward(self, x):
+        x = self.model(x)
+        return x
+
+class AlexnetModified(nn.Module) :
+    def __init__(self, args):
+        super(AlexnetModified, self).__init__()
+        self.model = torchvision.models.alexnet(pretrained = args.pretrained)
+        if args.activation == 'linear' :
+            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
+        else :
+            self.model.classifier[-1] = nn.Sequential(
+                                    nn.Linear(self.model.classifier[-1].in_features, 1),
+                                    nn.Sigmoid()
+                                    )
+    def forward(self, x):
+        x = self.model(x)
+        return x
+    
 class Model():
 
     def __init__(self, args = None):
-        self.model = torchvision.models.alexnet(pretrained = False)
+        if args.name_model == 'alexnet' :
+            self.model = AlexnetModified(args = args).model
+        elif args.name_model == 'resnet50' :
+            self.model = ResNetModified(args= args).model
         self.nb_classes = args.nb_classes
         self.activation = args.activation
         self.resize = args.resize
 
-        if self.activation == 'linear' :
-            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, self.nb_classes)
-        else :
-            self.model.classifier[-1] = nn.Sequential(
-                                        nn.Linear(self.model.classifier[-1].in_features, 1),
-                                        nn.Sigmoid()
-                                        )
+        # if self.activation == 'linear' :
+        #     self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, self.nb_classes)
+        # else :
+        #     self.model.classifier[-1] = nn.Sequential(
+        #                                 nn.Linear(self.model.classifier[-1].in_features, 1),
+        #                                 nn.Sigmoid()
+        #                                 )
         self.load_height = args.load_height
         self.load_width = args.load_width
         if self.resize == True :
@@ -250,8 +279,8 @@ def get_args_parser():
     #model
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
     parser.add_argument('--nb_classes', type= int, default= 2)
-    parser.add_argument('--load_checkpoint', type= str2bool, default= True)
-    parser.add_argument('--name_model', type=str, default= 'alexnet')
+    parser.add_argument('--pretrained', type= str2bool, default= False)
+    parser.add_argument('--name_model', type=str, default= 'alexnet', choices=['alexnet','resnet50'])
     parser.add_argument('--num_train', type= str)
     parser.add_argument('--num_ckpt', type=str)
     parser.add_argument('--threshold', type= float, default= 0.75)
@@ -296,7 +325,7 @@ if __name__ == "__main__" :
         write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
     start_time = time.time()
     # pred_old(folder_save = folder_save, args= args)
-    if args.combine == '000' :
+    if args.combine == '000' and args.parse == 'test':
         args.parse = 'dev'
         pred_new(folder_save = folder_save, args= args)
         args.parse = 'test'

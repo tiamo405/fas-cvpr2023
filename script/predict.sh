@@ -11,7 +11,7 @@ python predict.py   --save_txt true \
                     --resize True \
                     --load_height 224 \
                     --load_width 128 \
-                    --load_checkpoint True \
+                    --pretrained False \
                     --img_input img_face \
                     --batch_size 16 \
                     --num_workers 2 \
