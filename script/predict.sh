@@ -5,14 +5,14 @@ python predict.py   --save_txt true \
                     --activation linear \
                     --nb_classes 2 \
                     --name_model alexnet \
-                    --num_train 015 \
-                    --num_ckpt 1linear \
+                    --num_train 010 \
+                    --num_ckpt best_epoch \
                     --threshold 1 \
                     --resize false \
                     --load_height 224 \
                     --load_width 128 \
                     --load_checkpoint True \
-                    --img_input img_align \
+                    --img_input img_face_add_img_align \
                     --batch_size 16 \
                     --num_workers 2 \
                     --combine 016

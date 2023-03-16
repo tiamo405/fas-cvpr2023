@@ -25,6 +25,33 @@ from dataset.datasets import FasDataset
 
 from torch.optim import lr_scheduler
 
+
+class ResNetModified(nn.Module):
+    def __init__(self, args):
+        super(ResNetModified, self).__init__()
+        self.resnet = torchvision.models.resnet50(pretrained=False)
+        num_ftrs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Linear(num_ftrs, args.nb_classes)
+
+    def forward(self, x):
+        x = self.resnet(x)
+        return x
+
+class AlexnetModified(nn.Module) :
+    def __init__(self, args):
+        super(AlexnetModified, self).__init__()
+        self.model = torchvision.models.alexnet(pretrained = False)
+        if args.activation == 'linear' :
+            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
+            criterion = nn.CrossEntropyLoss()
+        else :
+            self.model.classifier[-1] = nn.Sequential(
+                                    nn.Linear(self.model.classifier[-1].in_features, 1),
+                                    nn.Sigmoid()
+                                    )
+    def forward(self, x):
+        x = self.model(x)
+        return x
     
 def train(args, lenFolder):
     Dataset = FasDataset(args)
@@ -49,20 +76,16 @@ def train(args, lenFolder):
     print("device :", device)
     
     #----------------------------------
-    model = torchvision.models.alexnet(pretrained = False)
-    if args.activation == 'linear' :
-        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, args.nb_classes)
-        criterion = nn.CrossEntropyLoss()
-    else :
-        model.classifier[-1] = nn.Sequential(
-                                nn.Linear(model.classifier[-1].in_features, 1),
-                                nn.Sigmoid()
-                                )
-        criterion = nn.BCELoss()
+    if args.name_model == 'alexnet' :
+        model = AlexnetModified(args)
+    if args.name_model == 'resnet50' :
+        model = ResNetModified(args)
+
     
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    # model = create_model(args)
+
     model.to(device)
     print(model)
 
@@ -71,46 +94,39 @@ def train(args, lenFolder):
     # total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
     # num_training_steps_per_epoch = len(trainDataset) // total_batch_size
     # num_training_steps_per_epoch = 1000 // total_batch_size
-    if args.layer_decay < 1.0 or args.layer_decay > 1.0:
-        num_layers = 12 # convnext layers divided into 12 parts, each with a different decayed lr value.
-        assert args.name_model in ['convnext_small', 'convnext_base', 'convnext_large', 'convnext_xlarge', 'alexnet'], \
-             "Layer Decay impl only supports convnext_small/base/large/xlarge"
-        assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
-    else:
-        assigner = None
+    # if args.layer_decay < 1.0 or args.layer_decay > 1.0:
+    #     num_layers = 12 # convnext layers divided into 12 parts, each with a different decayed lr value.
+    #     assert args.name_model in ['convnext_small', 'convnext_base', 'convnext_large', 'convnext_xlarge', 'alexnet'], \
+    #          "Layer Decay impl only supports convnext_small/base/large/xlarge"
+    #     assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
+    # else:
+    #     assigner = None
 
-    if assigner is not None:
-        print("Assigned values = %s" % str(assigner.values))
+    # if assigner is not None:
+    #     print("Assigned values = %s" % str(assigner.values))
     
-    mixup_fn = None
-    mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
-    if mixup_active:
-        print("Mixup is activated!")
-        mixup_fn = Mixup(
-            mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-            prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-            label_smoothing=args.smoothing, num_classes=args.nb_classes)
-    if args.activation == 'linear' :
-        if args.use_polyloss:
-            criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
-        elif mixup_fn is not None:
-            criterion = SoftTargetCrossEntropy()
-        elif args.smoothing > 0.:
-            criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-        else:
-            criterion = torch.nn.CrossEntropyLoss()
+    # mixup_fn = None
+    # mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
+    # if mixup_active:
+    #     print("Mixup is activated!")
+    #     mixup_fn = Mixup(
+    #         mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
+    #         prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
+    #         label_smoothing=args.smoothing, num_classes=args.nb_classes)
+    # if args.activation == 'linear' :
+    #     if args.use_polyloss:
+    #         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
+    #     elif mixup_fn is not None:
+    #         criterion = SoftTargetCrossEntropy()
+    #     elif args.smoothing > 0.:
+    #         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+    #     else:
+    #         criterion = torch.nn.CrossEntropyLoss()
+
+    criterion = nn.BCEWithLogitsLoss()
     
     
-    # optimizer = create_optimizer(
-    #     args, model_without_ddp, skip_list=None,
-    #     get_num_layer=assigner.get_layer_id if assigner is not None else None, 
-    #     get_layer_scale=assigner.get_scale if assigner is not None else None)
-    # lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    
-    # lr_schedule_values = utils.cosine_scheduler(
-    #     args.lr, args.min_lr, args.epochs, num_training_steps_per_epoch,
-    #     warmup_epochs=args.warmup_epochs, warmup_steps=args.warmup_steps,
-    # )
+
     
 
     best_acc = 0.0
@@ -126,14 +142,6 @@ def train(args, lenFolder):
             running_loss = 0.0
             running_corrects = 0
             for inputs in tqdm(dataLoader[phase]):
-                # if args.img_input == 'img_full_add_img_align':
-                #     input = inputs['img_full_add_img_align'].to(device)
-                # if args.img_input == 'img_full':
-                #     input = inputs['img_full'].to(device)
-                # if args.img_input == 'img_face_add_img_align':
-                #     input = inputs['img_face_add_img_align'].to(device)
-                # if args.img_input == 'img_align' :
-                #     input = inputs['img_align'].to(device)
                 input  = inputs[args.img_input].to(device)
                 if args.activation == 'linear' :
                     labels = inputs['label'].to(device)
@@ -146,11 +154,8 @@ def train(args, lenFolder):
                         _, preds = torch.max(outputs, 1)
                     else :
                          preds = (outputs > 0.5).float()
-                    
-                    # print(outputs)
-                    # print(preds)
-                    # print(labels)
-                    loss = criterion(outputs, labels)
+
+                    loss = criterion(outputs, torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=2).to(torch.float32))
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
@@ -212,9 +217,9 @@ def get_args_parser():
                         help='dataset path')
     
     # Model parameters
+    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet, resnet50'])
     parser.add_argument('--nb_classes', default=2, type=int,
                 help='number of the classification types')
-    parser.add_argument('--name_model', type=str, default='alexnet')
     parser.add_argument('--lr', type=float, default=4e-3, metavar='LR',
                         help='learning rate (default: 4e-3), with total batch size 4096')
     parser.add_argument('--layer_decay', type=float, default=1.0)
