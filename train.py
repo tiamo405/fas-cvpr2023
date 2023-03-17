@@ -216,7 +216,7 @@ def get_args_parser():
                         help='dataset path')
     
     # Model parameters
-    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet, resnet50'])
+    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet', 'resnet50'])
     parser.add_argument('--nb_classes', default=2, type=int,
                 help='number of the classification types')
     
@@ -242,6 +242,7 @@ def get_args_parser():
 
     # Dataset parameters
     # parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
+    parser.add_argument('--resize', type=str2bool, default= True)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)

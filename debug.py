@@ -200,6 +200,7 @@ def checkdata() :
     # img_rate = image[abs(top): bottom, left: right, :]
     # img = cv2.rectangle(image, (left, top), (right, bottom), color= (0,0,255), thickness= 1)
     # cv2.imwrite('debug.jpg', img)
+
 def get_args_parser():
     parser = argparse.ArgumentParser()
     
@@ -236,6 +237,7 @@ def get_args_parser():
     
     args = parser.parse_args()
     return args
+
 def dataset() :
     args = get_args_parser()
     from dataset.dataset_test import FasDatasetTest
@@ -280,12 +282,14 @@ def dataset() :
             for i in range(len(input)):
                 print(output[i][-1], inputs['path_image'][i].split('/')[-1])
             break
+
 def test_submit() :
     import shutil
     shutil.copy('results/dev/016/submit.txt', 'results')
     with open("/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt", 'r') as f :
         for line in f :
             write_txt('test/'+line.split()[0]+ ' ' + '0', 'results/submit.txt')
+
 def changeThreshold(threshold) :
     import shutil
     with open("results/test/002/submit.txt", 'r') as f :
@@ -297,6 +301,7 @@ def changeThreshold(threshold) :
                 write_txt(path+ ' ' + '0', 'results/test/009/submit.txt')
     shutil.copy('results/test/002/args.txt', 'results/test/009')
     save_zip('results/test/009')
+
 def ck_data_test():
     path = []
     with open("/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt", 'r') as f :
@@ -310,6 +315,53 @@ def ck_data_test():
             zipf.write(path[i], arcname)
             zipf.write(path[i].replace('.png', '.txt'), arcname.replace('.png', '.txt'))
             
+def printmodel() :
+    import torch
+    import torchvision.models as models
+
+    # Tạo mô hình AlexNet
+    model = models.alexnet(pretrained=True)
+
+    # Đặt mô hình ở trạng thái đánh giá (eval)
+    model.eval()
+
+    # In ra kiến trúc của mô hình
+    print(model)
+    model.train()
+    print(model)
+
+def trichxuatanh():
+    import torch.nn.functional as F
+
+    # Input image tensor
+    input_image = cv2.imread("data/000001.jpg")
+    input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB)
+    input_image = torch.from_numpy(input_image.astype('float32') / 255.0).permute(2, 0, 1).unsqueeze(0)
+
+    # Coordinates of eye center point
+    x_eye, y_eye = 537, 646
+
+    # Size of eye patch to extract
+    w, h = 100, 100
+
+    # Generate grid of sampling points around eye center
+    grid = torch.tensor([[[x / w * 2 - 1, y / h * 2 - 1] for y in range(y_eye - h // 2, y_eye + h // 2)]
+                                                        for x in range(x_eye - w // 2, x_eye + w // 2)])
+
+    # Reshape the grid to (N, H*W, 2) where N is the batch size
+    N, H, W, C = input_image.shape
+    grid = grid.repeat(N, 1, 1).to(input_image.device)
+
+    # Sample image patch around eye center using grid
+    eye_patch = F.grid_sample(input_image, grid.unsqueeze(0), align_corners=True)
+
+    print(eye_patch.squeeze_(0))
+    image_np = eye_patch.squeeze_(0).cpu().numpy()
+    image_np = np.transpose(image_np, (1, 2, 0))
+    image_np = (image_np * 255).astype('uint8')
+    if len(image_np.shape) == 2:
+        image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2RGB)
+    cv2.imwrite('debug.jpg', image_np)
 
 if __name__ == "__main__" :
     # x = checkReturn()
@@ -325,4 +377,6 @@ if __name__ == "__main__" :
     # dataset()
     # test_submit()
     # changeThreshold(0.92)
-    ck_data_test()
+    # ck_data_test()
+    # printmodel()
+    trichxuatanh()

@@ -1,18 +1,18 @@
-python predict.py   --save_txt true \
-                    --parse test \
+python predict.py   --save_txt false \
+                    --parse dev \
                     --path_save results \
                     --checkpoint_dir checkpoints \
                     --activation linear \
                     --nb_classes 2 \
                     --name_model alexnet \
-                    --num_train 017 \
-                    --num_ckpt 10 \
+                    --num_train 016 \
+                    --num_ckpt 9 \
                     --threshold 1 \
                     --resize True \
                     --load_height 224 \
                     --load_width 128 \
                     --pretrained False \
-                    --img_input img_face \
-                    --batch_size 16 \
+                    --img_input img_face_add_img_align \
+                    --batch_size 8 \
                     --num_workers 2 \
                     --combine 000

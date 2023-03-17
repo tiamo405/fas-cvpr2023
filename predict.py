@@ -121,6 +121,7 @@ class Model():
             return img_face_add_img_align.to(self.device).unsqueeze(0)
     def predict(self, path_image):
         input = self.preprocess(path_image)
+        self.model.eval()
         with torch.no_grad():
             output = self.model(input) 
             if self.activation == 'sigmoid':
@@ -324,13 +325,13 @@ if __name__ == "__main__" :
         arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
         write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
     start_time = time.time()
-    # pred_old(folder_save = folder_save, args= args)
-    if args.combine == '000' and args.parse == 'test':
-        args.parse = 'dev'
-        pred_new(folder_save = folder_save, args= args)
-        args.parse = 'test'
+    pred_old(folder_save = folder_save, args= args)
+    # if args.combine == '000' and args.parse == 'test':
+    #     args.parse = 'dev'
+    #     pred_new(folder_save = folder_save, args= args)
+    #     args.parse = 'test'
 
-    pred_new(folder_save = folder_save, args= args)
+    # pred_new(folder_save = folder_save, args= args)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Predict time {}'.format(total_time_str))
