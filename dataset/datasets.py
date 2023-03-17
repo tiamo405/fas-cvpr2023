@@ -29,6 +29,7 @@ class FasDataset(data.Dataset):
         self.load_height = args.load_height
         self.load_width = args.load_width
         self.parse = args.parse
+        self.resize = args.resize
         if self.resize == True:
             self.transform = transforms.Compose([
                 transforms.ToPILImage(),
