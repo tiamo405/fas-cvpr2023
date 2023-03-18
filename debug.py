@@ -290,17 +290,19 @@ def test_submit() :
         for line in f :
             write_txt('test/'+line.split()[0]+ ' ' + '0', 'results/submit.txt')
 
-def changeThreshold(threshold) :
+def changeThreshold(threshold, idcopy, idpaste) :
     import shutil
-    with open("results/test/002/submit.txt", 'r') as f :
+    os.makedirs('results/test/'+str(idpaste).zfill(3))
+    # shutil.copy('results/test/'+str(idcopy).zfill(3)+'/args.txt', 'results/test/'+str(idpaste).zfill(3))
+    write_txt('threshold: ' + str(threshold) + '\n' + 'score idcopy: '+str(idcopy).zfill(3), 'results/test/'+str(idpaste).zfill(3)+'/args.txt')
+    with open("results/test/"+str(idcopy).zfill(3)+"/submit.txt", 'r') as f :
         for line in f :
             path, score = line.split()[0], float(line.split()[1])
             if score >= threshold :
-                write_txt(path+ ' ' + '1', 'results/test/009/submit.txt')
+                write_txt(path+ ' ' + '1', 'results/test/'+str(idpaste).zfill(3)+'/submit.txt')
             else  :
-                write_txt(path+ ' ' + '0', 'results/test/009/submit.txt')
-    shutil.copy('results/test/002/args.txt', 'results/test/009')
-    save_zip('results/test/009')
+                write_txt(path+ ' ' + '0', 'results/test/'+str(idpaste).zfill(3)+'/submit.txt')
+    save_zip('results/test/'+str(idpaste).zfill(3))
 
 def ck_data_test():
     path = []
@@ -363,6 +365,36 @@ def trichxuatanh():
         image_np = cv2.cvtColor(image_np, cv2.COLOR_GRAY2RGB)
     cv2.imwrite('debug.jpg', image_np)
 
+def thongke_path_image():
+    path_train = []
+    with open('data/txt/pathImageTrain.txt', 'r') as f:
+        for line in f :
+            # print(line.split()[0].split('-'))
+            path_train.append(line.split()[0])
+            
+    return path_train
+
+def thongke_Widt_Height(path_image) :
+    # path_image = thongke_path_image()
+    sizes = []
+
+    # Lặp qua tất cả các tệp trong thư mục
+    for img_path in path_image:
+        # Kiểm tra nếu tệp là một tệp ảnh
+        if img_path.endswith('.jpg') or img_path.endswith('.png'):
+            # Đọc kích thước ảnh bằng OpenCV
+            # img_path = os.path.join(folder_path, filename)
+            img = cv2.imread(img_path)
+            height, width, channels = img.shape
+            
+            # Thêm kích thước của ảnh vào danh sách
+            sizes.append((width, height))
+
+    # Tách kích thước chiều dài và rộng thành hai danh sách riêng biệt
+    widths = [size[0] for size in sizes]
+    heights = [size[1] for size in sizes]
+    return widths, heights
+
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -376,7 +408,10 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    # changeThreshold(0.92)
+    changeThreshold(threshold= 0.6, idcopy= 10, idpaste= 16)
     # ck_data_test()
     # printmodel()
-    trichxuatanh()
+    # trichxuatanh()
+    # thongke_path_image()
+    # a,b = thongke_Widt_Height(path_image= thongke_path_image())
+    # print(a)

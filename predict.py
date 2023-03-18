@@ -19,14 +19,14 @@ from tqdm import tqdm
 from dataset.dataset_test import FasDatasetTest
 from torch.utils.data import DataLoader
 class ResNetModified(nn.Module):
-    def __init__(self, args):
+    def __init__(self):
         super(ResNetModified, self).__init__()
-        self.model = torchvision.models.resnet50(pretrained=args.pretrained)
-        num_ftrs = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_ftrs, args.nb_classes)
+        self.resnet = torchvision.models.resnet50(pretrained= False)
+        num_ftrs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Linear(num_ftrs, 2)
 
     def forward(self, x):
-        x = self.model(x)
+        x = self.resnet(x)
         return x
 
 class AlexnetModified(nn.Module) :
@@ -46,11 +46,11 @@ class AlexnetModified(nn.Module) :
     
 class Model():
 
-    def __init__(self, args = None):
+    def __init__(self, args ):
         if args.name_model == 'alexnet' :
             self.model = AlexnetModified(args = args).model
-        elif args.name_model == 'resnet50' :
-            self.model = ResNetModified(args= args).model
+        else :
+            self.model = ResNetModified()
         self.nb_classes = args.nb_classes
         self.activation = args.activation
         self.resize = args.resize
@@ -78,7 +78,9 @@ class Model():
         self.rate = args.rate
         
         self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
+ 
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model.eval()
@@ -121,7 +123,7 @@ class Model():
             return img_face_add_img_align.to(self.device).unsqueeze(0)
     def predict(self, path_image):
         input = self.preprocess(path_image)
-        self.model.eval()
+        # self.model.eval()
         with torch.no_grad():
             output = self.model(input) 
             if self.activation == 'sigmoid':
@@ -209,9 +211,15 @@ def pred_new(args, folder_save) :
         args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
         if args.combine != '000' :
             shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
-    model = Model(args = args).model
+
+    # model = ResNetModified()
+    # model.load_state_dict(torch.load('checkpoints/resnet50/001/4.pth')['model_state_dict'])
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # model.to(device)
+    # model.eval()
+    model = Model(args= args).model
     print(model)
-    print(model.training)
+    # print(model.training)
     testDataset = FasDatasetTest(args)
     testLoader = DataLoader(testDataset, batch_size=args.batch_size, \
                             num_workers= args.num_workers, shuffle= False)
@@ -325,13 +333,13 @@ if __name__ == "__main__" :
         arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
         write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
     start_time = time.time()
-    pred_old(folder_save = folder_save, args= args)
-    # if args.combine == '000' and args.parse == 'test':
-    #     args.parse = 'dev'
-    #     pred_new(folder_save = folder_save, args= args)
-    #     args.parse = 'test'
+    # pred_old(folder_save = folder_save, args= args)
+    if args.combine == '000' and args.parse == 'test':
+        args.parse = 'dev'
+        pred_new(folder_save = folder_save, args= args)
+        args.parse = 'test'
 
-    # pred_new(folder_save = folder_save, args= args)
+    pred_new(folder_save = folder_save, args= args)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Predict time {}'.format(total_time_str))
