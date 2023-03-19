@@ -7,7 +7,7 @@
 
 
 import os
-# import pandas as pd
+import torch
 import cv2
 import numpy as np
 from torchvision import datasets, transforms
@@ -33,7 +33,7 @@ class FasDataset(data.Dataset):
         if self.resize == True:
             self.transform = transforms.Compose([
                 transforms.ToPILImage(),
-                transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
+                # transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5),
                 transforms.Resize((self.load_height, self.load_width)),
                 transforms.ToTensor(),
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
@@ -89,7 +89,12 @@ class FasDataset(data.Dataset):
         img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
         img_face_add_img_align         = np.concatenate((img_face, img_align), axis= 1)
         
-
+        img_full_ycbcr = cv2.cvtColor(img_full, cv2.COLOR_RGB2YCrCb)[:,:,0]
+        img_face_ycbcr = cv2.cvtColor(img_face, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
+        img_align_ycbcr = cv2.cvtColor(img_align, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
+        img_face_ycbcr = np.concatenate((img_face_ycbcr, img_face_ycbcr, img_face_ycbcr), axis= 2)
+        img_align_ycbcr = np.concatenate((img_align_ycbcr, img_align_ycbcr, img_align_ycbcr), axis= 2)
+        # print(img_face_ycbcr.shape)
 
         # transform
         img_full                         = self.transform(img_full)
@@ -97,7 +102,11 @@ class FasDataset(data.Dataset):
         img_face                        = self.transform(img_face)
         img_full_add_img_align               = self.transform(img_full_add_img_align)
         img_face_add_img_align               = self.transform(img_face_add_img_align)
+        img_face_ycbcr                       = self.transform(img_face_ycbcr)
+        img_align_ycbcr                       = self.transform(img_align_ycbcr)
 
+
+        
         result = {
             'path_image' : path_image,
             'label' : label,
@@ -105,7 +114,9 @@ class FasDataset(data.Dataset):
             'img_face' : img_face,
             'img_full' : img_full,
             'img_full_add_img_align' : img_full_add_img_align,
-            'img_face_add_img_align' : img_face_add_img_align
+            'img_face_add_img_align' : img_face_add_img_align,
+            'img_face_ycbcr' :img_face_ycbcr,
+            'img_align_ycbcr' : img_align_ycbcr
         }
         return result
     

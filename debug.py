@@ -395,6 +395,16 @@ def thongke_Widt_Height(path_image) :
     heights = [size[1] for size in sizes]
     return widths, heights
 
+def torchcat() :
+    import torch
+
+    # assume your Y channel has size (1, H, W)
+    y_channel = torch.randn(1, 10, 10)
+
+    # repeat y_channel along 3 channels
+    x = torch.cat([y_channel, y_channel, y_channel], dim=0)
+    print(x.shape)  # output: torch.Size([3, H, W])
+
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -408,10 +418,11 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    changeThreshold(threshold= 0.6, idcopy= 10, idpaste= 16)
+    # changeThreshold(threshold= 0.6, idcopy= 10, idpaste= 16)
     # ck_data_test()
     # printmodel()
     # trichxuatanh()
     # thongke_path_image()
     # a,b = thongke_Widt_Height(path_image= thongke_path_image())
     # print(a)
+    torchcat()

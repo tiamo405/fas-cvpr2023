@@ -296,10 +296,12 @@ def get_args_parser():
 
     #data
     parser.add_argument('--resize', type=str2bool, default=True)
+    # parser.add_argument('--ycbcr', type=str2bool, default= False)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
-    parser.add_argument('--img_input', type=str, default='img_full_add_img_align', \
-                        choices=['img_full','img_full_add_img_align', 'img_face_add_img_align', 'img_face', 'img_align'])
+    parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
+        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align',\
+                 'img_face_ycbcr', 'img_align_ycbcr'])
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--batch_size', type=int, default= 16)
     parser.add_argument('--num_workers', type=int, default=2)

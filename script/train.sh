@@ -12,9 +12,10 @@ python train.py  --batch_size 16 \
                 --num_save_ckpt 5 \
                 --save_ckpt True \
                 --activation linear \
-                --img_input img_face \
+                --img_input img_face_ycbcr \
                 --resize True \
-                --name_model alexnet
+                --name_model alexnet \
+                # --ycbcr True
                 
                                         
 

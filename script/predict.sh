@@ -5,14 +5,15 @@ python predict.py   --save_txt true \
                     --activation linear \
                     --nb_classes 2 \
                     --name_model resnet50 \
-                    --num_train 001 \
-                    --num_ckpt 6 \
+                    --num_train 000 \
+                    --num_ckpt 1 \
                     --threshold 1 \
                     --resize false \
                     --load_height 224 \
                     --load_width 128 \
                     --pretrained False \
-                    --img_input img_face_add_img_align \
+                    --img_input img_face \
                     --batch_size 16 \
                     --num_workers 2 \
-                    --combine 000
+                    --combine 000 \
+                    # --ycbcr false

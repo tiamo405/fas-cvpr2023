@@ -142,6 +142,7 @@ def train(args, lenFolder):
             running_corrects = 0
             for inputs in tqdm(dataLoader[phase]):
                 input  = inputs[args.img_input].to(device)
+
                 if args.activation == 'linear' :
                     labels = inputs['label'].to(device)
                 else :    
@@ -243,11 +244,13 @@ def get_args_parser():
     # Dataset parameters
     # parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
     parser.add_argument('--resize', type=str2bool, default= True)
+    # parser.add_argument('--ycbcr', type=str2bool, default= False)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
-        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align'])
+        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align',\
+                 'img_face_ycbcr', 'img_align_ycbcr'])
     
     #mixup
     # parser.add_argument('--mixup', type=float, default=0.0,
