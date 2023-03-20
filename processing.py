@@ -6,12 +6,13 @@ import numpy as np
 import os
 import torchvision
 import pandas as pd
+import random
 from torchvision import transforms
 from PIL import Image
 from torch import nn
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dataset.utils import align_face, read_txt
-from src.utils import load_checkpoint, create_model, write_txt, save_txt, save_zip
+
 def str2bool(v):
     """
     Converts string to bool type; enables command line 
@@ -83,7 +84,28 @@ def pred(args, folder_save) :
         'score' : scores
     })
     df.to_csv(path_save, index= False)
-
+def themanh() :
+    import zipfile
+    path_train = []
+    path = []
+    with open('data/txt/pathImageTrain.txt', 'r') as f:
+        for line in f :
+            # print(line.split()[0].split('-'))
+            path_train.append(line.split()[0])
+    df = pd.read_csv("data/csv/all_image.csv")
+    
+    for pt in df['path_all_image'] :
+        if 'living' in pt and pt not in path_train :
+            path.append(pt)
+    save = random.sample(path, 20000)
+    zip_filename = os.path.join("data/train", '20000living.zip')
+    with zipfile.ZipFile(zip_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for pt in save : 
+            print(pt)
+            tmp = pt.split("/")
+            arcname = tmp[-3]+'-'+tmp[-2]+'-'+tmp[-1]
+            zipf.write(pt, arcname)
+            zipf.write(pt.replace('.jpg', '.txt'), arcname.replace('.jpg', '.txt'))
 def get_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--save_csv', type= str2bool, default=True)
@@ -104,4 +126,5 @@ def get_args_parser():
 
 if __name__ == "__main__" :
     args = get_args_parser()
-    pred(folder_save = "data/train", args= args)
+    # pred(folder_save = "data/train", args= args)
+    themanh()

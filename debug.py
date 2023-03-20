@@ -374,26 +374,29 @@ def thongke_path_image():
             
     return path_train
 
-def thongke_Widt_Height(path_image) :
+def thongke_Widt_Height() :
     # path_image = thongke_path_image()
-    sizes = []
-
+    import pandas as pd
+    sizes_face = []
+    sizes_image = []
+    path = []
     # Lặp qua tất cả các tệp trong thư mục
-    for img_path in path_image:
-        # Kiểm tra nếu tệp là một tệp ảnh
-        if img_path.endswith('.jpg') or img_path.endswith('.png'):
-            # Đọc kích thước ảnh bằng OpenCV
-            # img_path = os.path.join(folder_path, filename)
-            img = cv2.imread(img_path)
-            height, width, channels = img.shape
-            
-            # Thêm kích thước của ảnh vào danh sách
-            sizes.append((width, height))
-
+    with open('data/txt/pathImageTrain.txt', 'r') as f:
+        for line in f :
+            line = line.split()[0]
+            image = cv2.imread(line)
+            height, width, _ = image.shape 
+            (left, top), (right, bottom), dst =read_txt(line.replace('.jpg', '.txt'))
+            path.append(line)
+            sizes_image.append((width, height))
+            sizes_face.append((right- left, bottom - top))
     # Tách kích thước chiều dài và rộng thành hai danh sách riêng biệt
-    widths = [size[0] for size in sizes]
-    heights = [size[1] for size in sizes]
-    return widths, heights
+    df = pd.DataFrame({
+        'path' : path,
+        'sizes_image' : sizes_image,
+        'sizes_face' : sizes_face
+    })
+    df.to_csv('data/csv/sizeTrain.csv', index= False)
 
 def torchcat() :
     import torch
@@ -418,11 +421,11 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    # changeThreshold(threshold= 0.6, idcopy= 10, idpaste= 16)
+    # changeThreshold(threshold= 0.9, idcopy= 18, idpaste= len(os.listdir("results/test")))
     # ck_data_test()
     # printmodel()
     # trichxuatanh()
     # thongke_path_image()
-    # a,b = thongke_Widt_Height(path_image= thongke_path_image())
+    thongke_Widt_Height()
     # print(a)
-    torchcat()
+    # torchcat()

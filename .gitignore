@@ -164,7 +164,7 @@ __pycache__/
 results/
 
 .pth
-/.jpg
+.jpg
 .png
 .csv
 .json
