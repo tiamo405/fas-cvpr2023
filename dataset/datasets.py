@@ -89,12 +89,17 @@ class FasDataset(data.Dataset):
         img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
         img_face_add_img_align         = np.concatenate((img_face, img_align), axis= 1)
         
-        img_full_ycbcr = cv2.cvtColor(img_full, cv2.COLOR_RGB2YCrCb)[:,:,0]
-        img_face_ycbcr = cv2.cvtColor(img_face, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
-        img_align_ycbcr = cv2.cvtColor(img_align, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
-        img_face_ycbcr = np.concatenate((img_face_ycbcr, img_face_ycbcr, img_face_ycbcr), axis= 2)
-        img_align_ycbcr = np.concatenate((img_align_ycbcr, img_align_ycbcr, img_align_ycbcr), axis= 2)
-        # print(img_face_ycbcr.shape)
+        # img_full_ycbcr = cv2.cvtColor(img_full, cv2.COLOR_RGB2YCrCb)[:,:,0]
+        # img_face_ycbcr = cv2.cvtColor(img_face, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
+        # img_align_ycbcr = cv2.cvtColor(img_align, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
+        # img_face_ycbcr = np.concatenate((img_face_ycbcr, img_face_ycbcr, img_face_ycbcr), axis= 2)
+        # img_align_ycbcr = np.concatenate((img_align_ycbcr, img_align_ycbcr, img_align_ycbcr), axis= 2)
+        img_full_ycbcr = rgb2Y_in_Ycbcr(img_full)
+        img_face_ycbcr = rgb2Y_in_Ycbcr(img_face)
+        img_align_ycbcr = rgb2Y_in_Ycbcr(img_align)
+        img_full_add_img_align_ycbcr = rgb2Y_in_Ycbcr(img_full_add_img_align)
+        img_face_add_img_align_ycbcr = rgb2Y_in_Ycbcr(img_face_add_img_align)
+
 
         # transform
         img_full                         = self.transform(img_full)

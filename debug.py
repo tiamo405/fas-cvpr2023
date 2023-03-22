@@ -421,6 +421,7 @@ def ketHopResults(num1, num2, rate1, rate2) :
             score = rate1 * score1 + rate2 * score2
             write_txt(path+ ' ' + str(score), 'results/test/'+str(idpaste).zfill(3)+'/submit.txt')
     save_zip('results/test/'+str(idpaste).zfill(3))
+    
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -434,7 +435,7 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    changeThreshold(threshold= 0.95, idcopy= 24)
+    changeThreshold(threshold= 0.98, idcopy= 24)
     # ck_data_test()
     # printmodel()
     # trichxuatanh()

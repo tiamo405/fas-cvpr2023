@@ -51,7 +51,24 @@ class AlexnetModified(nn.Module) :
     def forward(self, x):
         x = self.model(x)
         return x
-    
+class Resnet50Edit(nn.Module) :
+    def __init__(self, args):
+        super(ResNetModified, self).__init__()
+        self.resnet = torchvision.models.resnet50(pretrained=args.pretrained)
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+        n_inputs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
+                    nn.Linear(n_inputs, 256),
+                    nn.ReLU(),
+                    nn.Dropout(0.5),
+                    nn.Linear(256, args.nb_classes),
+                    nn.LogSoftmax(dim=1)
+                )
+    def forward(self, x):
+        x = self.resnet(x)
+        return x
+
 def train(args, lenFolder):
     Dataset = FasDataset(args)
     train_size = int(0.8 * len(Dataset))
@@ -79,10 +96,12 @@ def train(args, lenFolder):
         model = AlexnetModified(args)
     if args.name_model == 'resnet50' :
         model = ResNetModified(args)
+    if args.name_model == 'resnet50edit' :
+        model = Resnet50Edit(args=args)
 
     
     # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,  weight_decay=1e-5)
     lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     model.to(device)
@@ -217,7 +236,7 @@ def get_args_parser():
                         help='dataset path')
     
     # Model parameters
-    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet', 'resnet50'])
+    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet', 'resnet50', 'resnet50edit'])
     parser.add_argument('--nb_classes', default=2, type=int,
                 help='number of the classification types')
     

@@ -43,14 +43,34 @@ class AlexnetModified(nn.Module) :
     def forward(self, x):
         x = self.model(x)
         return x
+
+class Resnet50Edit(nn.Module) :
+    def __init__(self):
+        super(ResNetModified, self).__init__()
+        self.resnet = torchvision.models.resnet50(pretrained=False)
+        for param in self.model.parameters():
+            param.requires_grad = False
+        n_inputs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
+                    nn.Linear(n_inputs, 256),
+                    nn.ReLU(),
+                    nn.Dropout(0.5),
+                    nn.Linear(256, 2),
+                    nn.LogSoftmax(dim=1)
+                )
+    def forward(self, x):
+        x = self.resnet(x)
+        return x
     
 class Model():
 
     def __init__(self, args ):
         if args.name_model == 'alexnet' :
             self.model = AlexnetModified(args = args).model
-        else :
+        elif args.namemodel == 'resnet50' :
             self.model = ResNetModified()
+        else :
+            self.model = Resnet50Edit()
         self.nb_classes = args.nb_classes
         self.activation = args.activation
         self.resize = args.resize
