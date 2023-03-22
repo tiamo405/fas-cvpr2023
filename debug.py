@@ -290,8 +290,9 @@ def test_submit() :
         for line in f :
             write_txt('test/'+line.split()[0]+ ' ' + '0', 'results/submit.txt')
 
-def changeThreshold(threshold, idcopy, idpaste) :
+def changeThreshold(threshold, idcopy) :
     import shutil
+    idpaste = len(os.listdir("results/test"))
     os.makedirs('results/test/'+str(idpaste).zfill(3))
     # shutil.copy('results/test/'+str(idcopy).zfill(3)+'/args.txt', 'results/test/'+str(idpaste).zfill(3))
     write_txt('threshold: ' + str(threshold) + '\n' + 'score idcopy: '+str(idcopy).zfill(3), 'results/test/'+str(idpaste).zfill(3)+'/args.txt')
@@ -408,6 +409,18 @@ def torchcat() :
     x = torch.cat([y_channel, y_channel, y_channel], dim=0)
     print(x.shape)  # output: torch.Size([3, H, W])
 
+def ketHopResults(num1, num2, rate1, rate2) :
+    import shutil
+    idpaste = len(os.listdir("results/test"))
+    os.makedirs('results/test/'+str(idpaste).zfill(3))
+    write_txt('num1: ' + str(num1) + '\n' +'num2:' + str(num2) + '\n'+ 'rate1:' + str(rate1) + '\n' + 'rate2:' + str(rate2) + '\n' , \
+              'results/test/'+str(idpaste).zfill(3)+'/args.txt')
+    with open("results/test/"+str(num1).zfill(3)+"/submit.txt", 'r') as f1, open("results/test/"+str(num2).zfill(3)+"/submit.txt", 'r') as f2:
+        for line1, line2 in zip(f1, f2):
+            path, score1, score2 = line1.split()[0], float(line1.split()[1]), float(line2.split()[1])
+            score = rate1 * score1 + rate2 * score2
+            write_txt(path+ ' ' + str(score), 'results/test/'+str(idpaste).zfill(3)+'/submit.txt')
+    save_zip('results/test/'+str(idpaste).zfill(3))
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -421,11 +434,12 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    # changeThreshold(threshold= 0.9, idcopy= 18, idpaste= len(os.listdir("results/test")))
+    changeThreshold(threshold= 0.95, idcopy= 24)
     # ck_data_test()
     # printmodel()
     # trichxuatanh()
     # thongke_path_image()
-    thongke_Widt_Height()
+    # thongke_Widt_Height()
     # print(a)
     # torchcat()
+    # ketHopResults(17, 22, 0.5, 0.5)

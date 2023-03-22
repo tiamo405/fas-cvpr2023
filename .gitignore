@@ -163,13 +163,13 @@ data/
 __pycache__/
 results/
 
-.pth
-.jpg
-.png
-.csv
-.json
-.txt
-.zip
-.tar
-.mp4
-.mp3
+*.pth
+*.jpg
+*.png
+*.csv
+*.json
+*.txt
+*.zip
+*.tar
+*.mp4
+*.mp3

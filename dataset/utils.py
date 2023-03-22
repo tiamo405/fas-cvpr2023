@@ -121,6 +121,14 @@ def gen_noise(shape):
     noise = np.asarray(noise / 255, dtype=np.uint8)
     noise = torch.tensor(noise, dtype=torch.float32)
     return noise
+
+def rgb2Y_in_Ycbcr(image) :
+    img_yuv = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+    y, cr, cb = cv2.split(img_yuv)
+    y = y.reshape((y.shape[0],y.shape[1], 1))
+    img_Y = np.concatenate((y, y, y), axis= 2)
+    return img_Y
+
 if __name__ == "__main__" :
     # print("start preprocessing/utils.py")
     # path_image = "data/DOU_4453.jpg"
