@@ -99,7 +99,7 @@ def train(args, lenFolder):
     
     # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,  weight_decay=1e-5)
-    lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
 
     model.to(device)
     print(model)
