@@ -9,6 +9,7 @@ python train.py  --batch_size 16 \
                 --load_width 128 \
                 --lr 0.001 \
                 --nb_classes 2 \
+                --loss Poly1CrossEntropyLoss \
                 --num_save_ckpt 5 \
                 --save_ckpt True \
                 --activation linear \

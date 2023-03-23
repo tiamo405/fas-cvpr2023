@@ -1,25 +1,21 @@
 import argparse
 import datetime
-import numpy as np
+
 import time
 import torch
 import torch.nn as nn
-# import torch.backends.cudnn as cudnn
-import cv2
+
 import os
 import copy
 import torchvision
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from torchvision import transforms
-from PIL import Image
-from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
-from optim_factory import create_optimizer, LayerDecayValueAssigner
 from losses import ArcFace, Poly1CrossEntropyLoss
-from src import utils
+
 from src.utils import write_txt, str2bool
 from dataset.datasets import FasDataset
 
@@ -141,12 +137,10 @@ def train(args, lenFolder):
     #         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
     #     else:
     #         criterion = torch.nn.CrossEntropyLoss()
-
-    criterion = nn.BCEWithLogitsLoss()
-    
-    
-
-    
+    if args.loss == 'BCEWithLogitsLoss':
+        criterion = nn.BCEWithLogitsLoss()
+    if args.loss == 'Poly1CrossEntropyLoss':
+        criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
 
     best_acc = 0.0
     best_epoch = None
@@ -174,8 +168,10 @@ def train(args, lenFolder):
                         _, preds = torch.max(outputs, 1)
                     else :
                          preds = (outputs > 0.5).float()
-
-                    loss = criterion(outputs, torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=2).to(torch.float32))
+                    if args.loss == 'BCEWithLogitsLoss':
+                        loss = criterion(outputs, torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=2).to(torch.float32))
+                    if args.loss == 'Poly1CrossEntropyLoss' :
+                        loss = criterion(outputs, labels)
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
@@ -237,23 +233,16 @@ def get_args_parser():
                         help='dataset path')
     
     # Model parameters
-    parser.add_argument('--name_model', type=str, default='alexnet', choices=['alexnet', 'resnet50', 'resnet50edit'])
-    parser.add_argument('--nb_classes', default=2, type=int,
-                help='number of the classification types')
+    parser.add_argument('--name_model', type=str, default='alexnet',\
+                         choices=['alexnet', 'resnet50', 'resnet50edit'])
+    parser.add_argument('--nb_classes', default=2, type=int)
     
-    parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
-    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
-                        help='learning rate (default: 4e-3), with total batch size 4096')
+    parser.add_argument('--activation', type= str, default= 'linear',\
+                         choices=['linear', 'sigmoid'])
+    parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
     parser.add_argument('--num_workers', default=2, type=int)
-    # parser.add_argument('--layer_decay', type=float, default=1.0)
-    # parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR',
-    #                     help='lower lr bound for cyclic schedulers that hit 0 (1e-6)')
-    # parser.add_argument('--warmup_epochs', type=int, default=20, metavar='N',
-    #                     help='epochs to warmup LR, if scheduler supports')
-    # parser.add_argument('--warmup_steps', type=int, default=-1, metavar='N',
-    #                     help='num of steps to warmup LR, will overload warmup_epochs if set > 0')
-    # parser.add_argument('--update_freq', default=1, type=int,
-    #                     help='gradient accumulation steps')
+    parser.add_argument('--loss', type=str, default= 'BCEWithLogitsLoss',\
+                         choices=['BCEWithLogitsLoss', 'Poly1CrossEntropyLoss'])
     
     #checkpoint
     parser.add_argument('--pretrained', type=str2bool, default= False)
@@ -262,9 +251,8 @@ def get_args_parser():
     
 
     # Dataset parameters
-    # parser.add_argument('--imagenet_default_mean_and_std', type=str2bool, default=True)
+
     parser.add_argument('--resize', type=str2bool, default= True)
-    # parser.add_argument('--ycbcr', type=str2bool, default= False)
     parser.add_argument('--load_height', type=int, default=224)
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--rate', type=float, default=1.2)
@@ -319,11 +307,7 @@ if __name__ == '__main__':
     print('\n'.join(map(str,(str(args).split('(')[1].split(',')))))
     lenFolder = ''
     if args.train_on == 'ssh' :
-        if not os.path.exists(args.checkpoint_dir) :
-            os.mkdir(args.checkpoint_dir)
-
-        if not os.path.exists(os.path.join(args.checkpoint_dir, args.name_model)) :
-            os.mkdir(os.path.join(args.checkpoint_dir, args.name_model))
+        os.makedirs(os.path.join(args.checkpoint_dir, args.name_model), exist_ok= True)
 
         lenFolder = str(len(os.listdir(os.path.join(args.checkpoint_dir, args.name_model)))).zfill(3)
         if args.save_ckpt :
