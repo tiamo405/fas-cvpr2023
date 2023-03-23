@@ -53,7 +53,7 @@ class AlexnetModified(nn.Module) :
         return x
 class Resnet50Edit(nn.Module) :
     def __init__(self, args):
-        super(ResNetModified, self).__init__()
+        super(Resnet50Edit, self).__init__()
         self.resnet = torchvision.models.resnet50(pretrained=args.pretrained)
         for param in self.resnet.parameters():
             param.requires_grad = False
@@ -88,7 +88,8 @@ def train(args, lenFolder):
     }
     # print(Dataset.__getitem__(100))
     # ---------------------------------------------
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda")
     print("device :", device)
     
     #----------------------------------

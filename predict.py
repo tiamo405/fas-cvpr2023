@@ -74,14 +74,6 @@ class Model():
         self.nb_classes = args.nb_classes
         self.activation = args.activation
         self.resize = args.resize
-
-        # if self.activation == 'linear' :
-        #     self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, self.nb_classes)
-        # else :
-        #     self.model.classifier[-1] = nn.Sequential(
-        #                                 nn.Linear(self.model.classifier[-1].in_features, 1),
-        #                                 nn.Sigmoid()
-        #                                 )
         self.load_height = args.load_height
         self.load_width = args.load_width
         if self.resize == True :
@@ -91,7 +83,6 @@ class Model():
                                 transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
         else : 
             self.transform = transforms.Compose([
-                                # transforms.Resize((self.load_height, self.load_width)),
                                 transforms.ToTensor(),
                                 transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
         self.input = args.img_input
