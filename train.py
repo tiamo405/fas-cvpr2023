@@ -226,7 +226,7 @@ def get_args_parser():
                         help='Per GPU batch size')
     parser.add_argument('--epochs', default=20, type=int)
     parser.add_argument('--parse', type=str, default= 'train')
-    parser.add_argument('--train_on', type=str, default='kaggle', choices=['kaggle', 'ssh'])
+    parser.add_argument('--train_on', type=str, default='ssh', choices=['kaggle', 'ssh'])
     # path, dir
     parser.add_argument('--checkpoint_dir', type= str, default='checkpoints')
     parser.add_argument('--path_data', default='data/train', type=str,
@@ -241,7 +241,7 @@ def get_args_parser():
                          choices=['linear', 'sigmoid'])
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--loss', type=str, default= 'BCEWithLogitsLoss',\
+    parser.add_argument('--loss', type=str, default= 'Poly1CrossEntropyLoss',\
                          choices=['BCEWithLogitsLoss', 'Poly1CrossEntropyLoss'])
     
     #checkpoint

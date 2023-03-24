@@ -67,7 +67,7 @@ class Model():
     def __init__(self, args ):
         if args.name_model == 'alexnet' :
             self.model = AlexnetModified(args = args).model
-        elif args.namemodel == 'resnet50' :
+        elif args.name_model == 'resnet50' :
             self.model = ResNetModified()
         else :
             self.model = Resnet50Edit()

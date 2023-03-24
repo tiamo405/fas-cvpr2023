@@ -11,14 +11,13 @@ import torch
 import cv2
 import numpy as np
 from torchvision import datasets, transforms
-from timm.data.constants import \
-    IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMAGENET_INCEPTION_MEAN, IMAGENET_INCEPTION_STD
+
 # from timm.data import create_transform
 # from dataset.FaceAligner import FaceAligner
 from torch.utils import data
 from torchvision import transforms
 from dataset.utils import align_face, read_txt, rgb2Y_in_Ycbcr
-from PIL import Image
+
 
 
 class FasDataset(data.Dataset):
@@ -89,11 +88,7 @@ class FasDataset(data.Dataset):
         img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
         img_face_add_img_align         = np.concatenate((img_face, img_align), axis= 1)
         
-        # img_full_ycbcr = cv2.cvtColor(img_full, cv2.COLOR_RGB2YCrCb)[:,:,0]
-        # img_face_ycbcr = cv2.cvtColor(img_face, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
-        # img_align_ycbcr = cv2.cvtColor(img_align, cv2.COLOR_RGB2YCrCb)[:,:,0].reshape((self.load_height, self.load_width, 1))
-        # img_face_ycbcr = np.concatenate((img_face_ycbcr, img_face_ycbcr, img_face_ycbcr), axis= 2)
-        # img_align_ycbcr = np.concatenate((img_align_ycbcr, img_align_ycbcr, img_align_ycbcr), axis= 2)
+
         img_full_ycbcr = rgb2Y_in_Ycbcr(img_full)
         img_face_ycbcr = rgb2Y_in_Ycbcr(img_face)
         img_align_ycbcr = rgb2Y_in_Ycbcr(img_align)

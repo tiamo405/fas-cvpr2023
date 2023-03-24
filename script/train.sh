@@ -4,7 +4,7 @@ python train.py  --batch_size 16 \
                 --checkpoint_dir checkpoints \
                 --path_data data/train \
                 --num_workers 2 \
-                --name_model resnet50edit \
+                --name_model resnet50 \
                 --load_height 224 \
                 --load_width 128 \
                 --lr 0.001 \
@@ -13,7 +13,7 @@ python train.py  --batch_size 16 \
                 --num_save_ckpt 5 \
                 --save_ckpt True \
                 --activation linear \
-                --img_input img_face \
+                --img_input img_align \
                 --resize True \
                 # --ycbcr True
                 
