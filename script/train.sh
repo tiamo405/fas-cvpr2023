@@ -6,14 +6,14 @@ python train.py  --batch_size 16 \
                 --num_workers 2 \
                 --name_model resnet50 \
                 --load_height 224 \
-                --load_width 128 \
+                --load_width 224 \
                 --lr 0.001 \
                 --nb_classes 2 \
-                --loss Poly1CrossEntropyLoss \
+                --loss ArcFace \
                 --num_save_ckpt 5 \
                 --save_ckpt True \
                 --activation linear \
-                --img_input img_align \
+                --img_input img_face \
                 --resize True
                 # --ycbcr True
                 

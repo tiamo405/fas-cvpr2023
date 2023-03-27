@@ -15,7 +15,7 @@ from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
 from losses import ArcFace, Poly1CrossEntropyLoss
-
+from pytorch_metric_learning import losses as los
 from src.utils import write_txt, str2bool
 from dataset.datasets import FasDataset
 
@@ -142,7 +142,9 @@ def train(args, lenFolder):
     if args.loss == 'Poly1CrossEntropyLoss':
         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
     if args.loss == 'ArcFace' :
-        criterion = ArcFace()
+        # criterion = ArcFace(s = 64, margin= 0.5)
+        criterion = los.ArcFaceLoss(2, embedding_size = 2, margin=28.6, scale=64)
+
     best_acc = 0.0
     best_epoch = None
     for epoch in range(1, args.epochs +1):
@@ -250,7 +252,7 @@ def get_args_parser():
     #checkpoint
     parser.add_argument('--pretrained', type=str2bool, default= False)
     parser.add_argument('--num_save_ckpt', type= int, default= 5)
-    parser.add_argument('--save_ckpt', type=str2bool, default=True)
+    parser.add_argument('--save_ckpt', type=str2bool, default=False)
     
 
     # Dataset parameters

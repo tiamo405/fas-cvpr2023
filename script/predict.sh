@@ -5,12 +5,12 @@ python predict.py   --save_txt true \
                     --activation linear \
                     --nb_classes 2 \
                     --name_model resnet50 \
-                    --num_train 007 \
-                    --num_ckpt 10linear \
+                    --num_train 008 \
+                    --num_ckpt 6linear \
                     --threshold 1 \
                     --resize True \
                     --load_height 224 \
-                    --load_width 128 \
+                    --load_width 224 \
                     --pretrained False \
                     --img_input img_align \
                     --batch_size 16 \
