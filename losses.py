@@ -79,22 +79,6 @@ class Poly1CrossEntropyLoss(nn.Module):
             poly1 = poly1.sum()
         return poly1
 
-class BinaryPoly1CrossEntropyLoss(nn.Module):
-    def __init__(self, epsilon: float = 1.0, reduction: str = "mean"):
-        super(BinaryPoly1CrossEntropyLoss, self).__init__()
-        self.epsilon = epsilon
-        self.reduction = reduction
-
-    def forward(self, logits, labels):
-        """
-        Forward pass
-        :param logits: tensor of shape [N, 2]
-        :param labels: tensor of shape [N]
-        :return: binary poly cross-entropy loss
-        """
-        weight = torch.tensor([1, 0], dtype=logits.dtype, device=logits.device)
-        loss_fn = Poly1CrossEntropyLoss(num_classes=2, epsilon=self.epsilon, reduction=self.reduction, weight=weight)
-        return loss_fn(logits, labels)
 
 if __name__ == '__main__':
     loss = Poly1CrossEntropyLoss(num_classes=2, reduction='mean')

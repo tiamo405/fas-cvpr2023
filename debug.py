@@ -435,7 +435,7 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    changeThreshold(threshold= 0.98, idcopy= 24)
+    changeThreshold(threshold= 0.8, idcopy= 31)
     # ck_data_test()
     # printmodel()
     # trichxuatanh()

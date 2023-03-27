@@ -14,7 +14,7 @@ python train.py  --batch_size 16 \
                 --save_ckpt True \
                 --activation linear \
                 --img_input img_align \
-                --resize True \
+                --resize True
                 # --ycbcr True
                 
                                         

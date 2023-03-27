@@ -141,7 +141,8 @@ def train(args, lenFolder):
         criterion = nn.BCEWithLogitsLoss()
     if args.loss == 'Poly1CrossEntropyLoss':
         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
-
+    if args.loss == 'ArcFace' :
+        criterion = ArcFace()
     best_acc = 0.0
     best_epoch = None
     for epoch in range(1, args.epochs +1):
@@ -171,6 +172,8 @@ def train(args, lenFolder):
                     if args.loss == 'BCEWithLogitsLoss':
                         loss = criterion(outputs, torch.nn.functional.one_hot(labels.to(torch.int64), num_classes=2).to(torch.float32))
                     if args.loss == 'Poly1CrossEntropyLoss' :
+                        loss = criterion(outputs, labels)
+                    if args.loss == 'ArcFace' :
                         loss = criterion(outputs, labels)
                     if phase == 'train':
                         loss.backward()
@@ -205,7 +208,7 @@ def train(args, lenFolder):
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': loss,
-                }, str(epoch)+ args.activation +'.pth')
+                }, str(epoch) +'.pth')
             
     model.load_state_dict(best_model_wts)
     if args.train_on == 'ssh' :
@@ -241,8 +244,8 @@ def get_args_parser():
                          choices=['linear', 'sigmoid'])
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--loss', type=str, default= 'Poly1CrossEntropyLoss',\
-                         choices=['BCEWithLogitsLoss', 'Poly1CrossEntropyLoss'])
+    parser.add_argument('--loss', type=str, default= 'ArcFace',\
+                         choices=['BCEWithLogitsLoss', 'Poly1CrossEntropyLoss', 'ArcFace'])
     
     #checkpoint
     parser.add_argument('--pretrained', type=str2bool, default= False)
