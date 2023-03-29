@@ -11,59 +11,28 @@ import torchvision
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from timm.data.mixup import Mixup
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 
-from losses import ArcFace, Poly1CrossEntropyLoss
+from losses import Poly1CrossEntropyLoss
 from pytorch_metric_learning import losses as los
 from src.utils import write_txt, str2bool
 from dataset.datasets import FasDataset
 
 from torch.optim import lr_scheduler
+from models.resnet import resnet101
 
-
-class ResNetModified(nn.Module):
-    def __init__(self, args):
-        super(ResNetModified, self).__init__()
-        self.resnet = torchvision.models.resnet50(pretrained=args.pretrained)
+class SplitModel(nn.Module):
+    def __init__(self):
+        super(SplitModel, self).__init__()
+        self.resnet = resnet101()
         num_ftrs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(num_ftrs, args.nb_classes)
+        self.resnet.fc = nn.Linear(num_ftrs, 2)
 
     def forward(self, x):
         x = self.resnet(x)
+
         return x
 
-class AlexnetModified(nn.Module) :
-    def __init__(self, args):
-        super(AlexnetModified, self).__init__()
-        self.model = torchvision.models.alexnet(pretrained = args.pretrained)
-        if args.activation == 'linear' :
-            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
-        else :
-            self.model.classifier[-1] = nn.Sequential(
-                                    nn.Linear(self.model.classifier[-1].in_features, 1),
-                                    nn.Sigmoid()
-                                    )
-    def forward(self, x):
-        x = self.model(x)
-        return x
-class Resnet50Edit(nn.Module) :
-    def __init__(self, args):
-        super(Resnet50Edit, self).__init__()
-        self.resnet = torchvision.models.resnet50(pretrained=args.pretrained)
-        for param in self.resnet.parameters():
-            param.requires_grad = False
-        n_inputs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Sequential(
-                    nn.Linear(n_inputs, 256),
-                    nn.ReLU(),
-                    nn.Dropout(0.5),
-                    nn.Linear(256, args.nb_classes),
-                    nn.LogSoftmax(dim=1)
-                )
-    def forward(self, x):
-        x = self.resnet(x)
-        return x
+
 
 def train(args, lenFolder):
     Dataset = FasDataset(args)
@@ -84,17 +53,12 @@ def train(args, lenFolder):
     }
     # print(Dataset.__getitem__(100))
     # ---------------------------------------------
-    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cuda")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda")
     print("device :", device)
     
     #----------------------------------
-    if args.name_model == 'alexnet' :
-        model = AlexnetModified(args)
-    if args.name_model == 'resnet50' :
-        model = ResNetModified(args)
-    if args.name_model == 'resnet50edit' :
-        model = Resnet50Edit(args=args)
+    model = SplitModel()
 
     
     # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
@@ -104,46 +68,12 @@ def train(args, lenFolder):
     model.to(device)
     print(model)
 
-    # model_without_ddp = model
-    # n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    # total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
-    # num_training_steps_per_epoch = len(trainDataset) // total_batch_size
-    # num_training_steps_per_epoch = 1000 // total_batch_size
-    # if args.layer_decay < 1.0 or args.layer_decay > 1.0:
-    #     num_layers = 12 # convnext layers divided into 12 parts, each with a different decayed lr value.
-    #     assert args.name_model in ['convnext_small', 'convnext_base', 'convnext_large', 'convnext_xlarge', 'alexnet'], \
-    #          "Layer Decay impl only supports convnext_small/base/large/xlarge"
-    #     assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
-    # else:
-    #     assigner = None
-
-    # if assigner is not None:
-    #     print("Assigned values = %s" % str(assigner.values))
-    
-    # mixup_fn = None
-    # mixup_active = args.mixup > 0 or args.cutmix > 0. or args.cutmix_minmax is not None
-    # if mixup_active:
-    #     print("Mixup is activated!")
-    #     mixup_fn = Mixup(
-    #         mixup_alpha=args.mixup, cutmix_alpha=args.cutmix, cutmix_minmax=args.cutmix_minmax,
-    #         prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
-    #         label_smoothing=args.smoothing, num_classes=args.nb_classes)
-    # if args.activation == 'linear' :
-    #     if args.use_polyloss:
-    #         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
-    #     elif mixup_fn is not None:
-    #         criterion = SoftTargetCrossEntropy()
-    #     elif args.smoothing > 0.:
-    #         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    #     else:
-    #         criterion = torch.nn.CrossEntropyLoss()
     if args.loss == 'BCEWithLogitsLoss':
         criterion = nn.BCEWithLogitsLoss()
     if args.loss == 'Poly1CrossEntropyLoss':
         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
     if args.loss == 'ArcFace' :
-        # criterion = ArcFace(s = 64, margin= 0.5)
-        criterion = los.ArcFaceLoss(2, embedding_size = 128, margin=28.6, scale=64)
+        criterion = los.ArcFaceLoss(2, embedding_size = 2, margin=28.6, scale=64)
 
     best_acc = 0.0
     best_epoch = None
@@ -194,7 +124,7 @@ def train(args, lenFolder):
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
                 best_epoch = epoch
-            if epoch % args.num_save_ckpt ==0 or epoch == args.epochs or epoch == 1:
+            if (epoch % args.num_save_ckpt ==0 or epoch == args.epochs or epoch == 1 ) and args.save_ckpt:
                 if args.train_on == 'ssh' :
                     torch.save({
                     'epoch': epoch,
@@ -238,15 +168,15 @@ def get_args_parser():
                         help='dataset path')
     
     # Model parameters
-    parser.add_argument('--name_model', type=str, default='alexnet',\
-                         choices=['alexnet', 'resnet50', 'resnet50edit'])
+    parser.add_argument('--name_model', type=str, default='SplitModel',\
+                         choices=['SplitModel'])
     parser.add_argument('--nb_classes', default=2, type=int)
     
     parser.add_argument('--activation', type= str, default= 'linear',\
                          choices=['linear', 'sigmoid'])
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--loss', type=str, default= 'ArcFace',\
+    parser.add_argument('--loss', type=str, default= 'Poly1CrossEntropyLoss',\
                          choices=['BCEWithLogitsLoss', 'Poly1CrossEntropyLoss', 'ArcFace'])
     
     #checkpoint
@@ -259,12 +189,10 @@ def get_args_parser():
 
     parser.add_argument('--resize', type=str2bool, default= True)
     parser.add_argument('--load_height', type=int, default=224)
-    parser.add_argument('--load_width', type=int, default=128)
+    parser.add_argument('--load_width', type=int, default=224)
     parser.add_argument('--rate', type=float, default=1.2)
-    parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
-        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align',\
-                 'img_face_ycbcr', 'img_align_ycbcr'])
-    
+    parser.add_argument('--img_input', type=str, default='img_face_add_img_align_dim6', \
+        choices=['img_face_add_img_align_dim6'])
 
     
     opt = parser.parse_args()

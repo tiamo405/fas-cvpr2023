@@ -104,7 +104,7 @@ class FasDataset(data.Dataset):
         img_face_add_img_align               = self.transform(img_face_add_img_align)
         img_face_ycbcr                       = self.transform(img_face_ycbcr)
         img_align_ycbcr                       = self.transform(img_align_ycbcr)
-
+        img_face_add_img_align_dim6 =   torch.cat((img_face, img_align), dim=0)
 
         
         result = {
@@ -116,7 +116,8 @@ class FasDataset(data.Dataset):
             'img_full_add_img_align' : img_full_add_img_align,
             'img_face_add_img_align' : img_face_add_img_align,
             'img_face_ycbcr' :img_face_ycbcr,
-            'img_align_ycbcr' : img_align_ycbcr
+            'img_align_ycbcr' : img_align_ycbcr,
+            'img_face_add_img_align_dim6' : img_face_add_img_align_dim6
         }
         return result
     
