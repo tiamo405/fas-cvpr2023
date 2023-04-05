@@ -14,9 +14,9 @@ from tqdm import tqdm
 
 from losses import Poly1CrossEntropyLoss
 from pytorch_metric_learning import losses as los
-from src.utils import write_txt, str2bool
+from utils.utils import write_txt, str2bool
 from dataset.datasets import FasDataset
-
+from losses import ArcFace
 from torch.optim import lr_scheduler
 from models.resnet import resnet101
 
@@ -61,9 +61,6 @@ def train(args, lenFolder):
     model = SplitModel()
 
     
-    # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,  weight_decay=1e-5)
-    lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
 
     model.to(device)
     print(model)
@@ -73,8 +70,13 @@ def train(args, lenFolder):
     if args.loss == 'Poly1CrossEntropyLoss':
         criterion = Poly1CrossEntropyLoss(num_classes=args.nb_classes, reduction='mean')
     if args.loss == 'ArcFace' :
+        # criterion = ArcFace(s = 10, margin= 0.5)
         criterion = los.ArcFaceLoss(2, embedding_size = 2, margin=28.6, scale=64)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9, weight_decay=5e-4)
 
+    # # optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum = 0.9)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,  weight_decay=1e-5)
+    lr_schedule_values = lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
     best_acc = 0.0
     best_epoch = None
     for epoch in range(1, args.epochs +1):
@@ -157,9 +159,9 @@ def train(args, lenFolder):
         
 def get_args_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch_size', default=16, type=int,
+    parser.add_argument('--batch_size', default=8, type=int,
                         help='Per GPU batch size')
-    parser.add_argument('--epochs', default=20, type=int)
+    parser.add_argument('--epochs', default=40, type=int)
     parser.add_argument('--parse', type=str, default= 'train')
     parser.add_argument('--train_on', type=str, default='ssh', choices=['kaggle', 'ssh'])
     # path, dir
@@ -176,11 +178,10 @@ def get_args_parser():
                          choices=['linear', 'sigmoid'])
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR')
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument('--loss', type=str, default= 'Poly1CrossEntropyLoss',\
+    parser.add_argument('--loss', type=str, default= 'ArcFace',\
                          choices=['BCEWithLogitsLoss', 'Poly1CrossEntropyLoss', 'ArcFace'])
     
     #checkpoint
-    parser.add_argument('--pretrained', type=str2bool, default= False)
     parser.add_argument('--num_save_ckpt', type= int, default= 5)
     parser.add_argument('--save_ckpt', type=str2bool, default=False)
     

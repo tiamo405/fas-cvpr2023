@@ -16,13 +16,13 @@ class ArcFace(torch.nn.Module):
         self.theta = math.cos(math.pi - margin)
         self.sinmm = math.sin(math.pi - margin) * margin
         self.easy_margin = False
-        self.cross_entropy = torch.nn.CrossEntropyLoss()
+        return
 
 
     def forward(self, logits: torch.Tensor, labels: torch.Tensor):
         index = torch.where(labels != -1)[0]
         target_logit = logits[index, labels[index].view(-1)]
-
+        target_logit = torch.clamp(target_logit, -1.0, 1.0)  # giới hạn giá trị của target_logit   
         sin_theta = torch.sqrt(1.0 - torch.pow(target_logit, 2))
         cos_theta_m = target_logit * self.cos_m - sin_theta * self.sin_m  # cos(target+margin)
         if self.easy_margin:
@@ -35,14 +35,18 @@ class ArcFace(torch.nn.Module):
         logits[index, labels[index].view(-1)] = final_target_logit
         logits = logits * self.scale
 
-        return self.cross_entropy(logits, labels)
+        return F.cross_entropy(input=logits,
+                             target=labels,
+                             reduction='mean')
 
 
+
+    
 class Poly1CrossEntropyLoss(nn.Module):
     def __init__(self,
                  num_classes: int,
                  epsilon: float = 1.0,
-                 reduction: str = "none",
+                 reduction: str = "mean",
                  weight: Tensor = None):
         """
         Create instance of Poly1CrossEntropyLoss
@@ -78,6 +82,7 @@ class Poly1CrossEntropyLoss(nn.Module):
         elif self.reduction == "sum":
             poly1 = poly1.sum()
         return poly1
+
 
 
 if __name__ == '__main__':

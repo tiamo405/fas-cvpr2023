@@ -14,10 +14,24 @@ from torchvision import transforms
 from PIL import Image
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from dataset.utils import align_face, read_txt
-from src.utils import write_txt, save_zip, str2bool
+from utils.utils import write_txt, save_zip, str2bool
 from tqdm import tqdm
 from dataset.dataset_test import FasDatasetTest
 from torch.utils.data import DataLoader
+
+from models.resnet import resnet101
+
+class SplitModel(nn.Module):
+    def __init__(self):
+        super(SplitModel, self).__init__()
+        self.resnet = resnet101()
+        num_ftrs = self.resnet.fc.in_features
+        self.resnet.fc = nn.Linear(num_ftrs, 2)
+
+    def forward(self, x):
+        x = self.resnet(x)
+
+        return x
 class ResNetModified(nn.Module):
     def __init__(self):
         super(ResNetModified, self).__init__()
@@ -67,10 +81,10 @@ class Model():
     def __init__(self, args ):
         if args.name_model == 'alexnet' :
             self.model = AlexnetModified(args = args).model
-        elif args.name_model == 'resnet50' :
+        if args.name_model == 'resnet50' :
             self.model = ResNetModified()
-        else :
-            self.model = Resnet50Edit()
+        if args.name_model == 'SplitModel' :
+            self.model = SplitModel()
         self.nb_classes = args.nb_classes
         self.activation = args.activation
         self.resize = args.resize
@@ -300,7 +314,7 @@ def get_args_parser():
     parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
     parser.add_argument('--nb_classes', type= int, default= 2)
     parser.add_argument('--pretrained', type= str2bool, default= False)
-    parser.add_argument('--name_model', type=str, default= 'alexnet', choices=['alexnet','resnet50'])
+    parser.add_argument('--name_model', type=str, default= 'SplitModel', choices=['alexnet','resnet50', 'SplitModel'])
     parser.add_argument('--num_train', type= str)
     parser.add_argument('--num_ckpt', type=str)
     parser.add_argument('--threshold', type= float, default= 0.75)
@@ -312,7 +326,7 @@ def get_args_parser():
     parser.add_argument('--load_width', type=int, default=128)
     parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
         choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align',\
-                 'img_face_ycbcr', 'img_align_ycbcr'])
+                 'img_face_ycbcr', 'img_align_ycbcr', 'img_face_add_img_align_dim6'])
     parser.add_argument('--rate', type=float, default=1.2)
     parser.add_argument('--batch_size', type=int, default= 16)
     parser.add_argument('--num_workers', type=int, default=2)

@@ -4,16 +4,16 @@ python predict.py   --save_txt true \
                     --checkpoint_dir checkpoints \
                     --activation linear \
                     --nb_classes 2 \
-                    --name_model resnet50 \
-                    --num_train 008 \
-                    --num_ckpt 6linear \
+                    --name_model SplitModel \
+                    --num_train 003 \
+                    --num_ckpt best_epoch \
                     --threshold 1 \
                     --resize True \
                     --load_height 224 \
                     --load_width 224 \
                     --pretrained False \
-                    --img_input img_align \
-                    --batch_size 16 \
-                    --num_workers 2 \
+                    --img_input img_face_add_img_align_dim6 \
+                    --batch_size 8 \
+                    --num_workers 1 \
                     --combine 000 \
                     # --ycbcr false

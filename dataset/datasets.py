@@ -12,8 +12,6 @@ import cv2
 import numpy as np
 from torchvision import datasets, transforms
 
-# from timm.data import create_transform
-# from dataset.FaceAligner import FaceAligner
 from torch.utils import data
 from torchvision import transforms
 from dataset.utils import align_face, read_txt, rgb2Y_in_Ycbcr
@@ -21,14 +19,14 @@ from dataset.utils import align_face, read_txt, rgb2Y_in_Ycbcr
 
 
 class FasDataset(data.Dataset):
-    def __init__(self, args) -> None:
+    def __init__(self, path_data, load_width, load_height, resize, num_classes) -> None:
         super(FasDataset, self).__init__()
-        self.path_data = args.path_data
-        
-        self.load_height = args.load_height
-        self.load_width = args.load_width
-        self.parse = args.parse
-        self.resize = args.resize
+        self.path_data =path_data
+        self.load_height = load_height
+        self.load_width = load_width
+        self.resize = resize
+        self.num_classes = num_classes
+
         if self.resize == True:
             self.transform = transforms.Compose([
                 transforms.ToPILImage(),
@@ -46,8 +44,7 @@ class FasDataset(data.Dataset):
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
                 
             ])
-        self.rate = args.rate
-        self.nb_classes = args.nb_classes
+        
         path_image_s = []
         labels = []
         for folder in os.listdir(self.path_data) :
@@ -55,7 +52,7 @@ class FasDataset(data.Dataset):
                 if '.txt' not in pt :
                     path_image_s.append(os.path.join(self.path_data, folder, pt))
 
-                    if self.nb_classes == 2 :
+                    if self.num_classes == 2 :
                         labels.append(0 if 'spoof'in pt else 1)
                     else :
                         if 'spoof' in pt and '3D' not in pt :

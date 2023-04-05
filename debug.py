@@ -10,9 +10,11 @@ import zipfile
 import random
 import argparse
 from dataset.utils import read_txt, align_face
-from src.utils import str2bool
+from utils.utils import str2bool
 from torch.utils.data import DataLoader
-from src.utils import write_txt, save_zip
+from utils.utils import write_txt, save_zip
+from utils import utils_config_train
+from torch.utils.tensorboard import SummaryWriter
 
 def congmang(a, numa, b, numb) :
     res = []
@@ -550,6 +552,18 @@ def ketHopResults(num1, num2, rate1, rate2) :
             write_txt(path+ ' ' + str(score), 'results/test/'+str(idpaste).zfill(3)+'/submit.txt')
     save_zip('results/test/'+str(idpaste).zfill(3))
     
+def testSummaryWriter() :
+    writer = SummaryWriter()
+
+    for n_iter in range(100):
+        writer.add_scalar('Loss/train', np.random.random(), n_iter)
+        writer.add_scalar('Loss/test', np.random.random(), n_iter)
+        writer.add_scalar('Accuracy/train', np.random.random(), n_iter)
+        writer.add_scalar('Accuracy/test', np.random.random(), n_iter)
+
+def config() :
+    cfg = utils_config_train.config[1]
+    print(cfg['LR']*0.1)
 if __name__ == "__main__" :
     # x = checkReturn()
     # print(x['a'])
@@ -563,7 +577,7 @@ if __name__ == "__main__" :
     # checkdata()
     # dataset()
     # test_submit()
-    changeThreshold(threshold= 0.8, idcopy= 31)
+    # changeThreshold(threshold= 0.8, idcopy= 31)
     # ck_data_test()
     # printmodel()
     # trichxuatanh()
@@ -572,3 +586,5 @@ if __name__ == "__main__" :
     # print(a)
     # torchcat()
     # ketHopResults(17, 22, 0.5, 0.5)
+    # testSummaryWriter()
+    config()
