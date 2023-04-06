@@ -24,17 +24,16 @@ from PIL import Image
 
 
 class FasDatasetTest(data.Dataset):
-    def __init__(self, args) -> None:
+    def __init__(self, path_data, load_height, load_width,
+                  path_txt, resize, nb_classes) -> None:
         super(FasDatasetTest, self).__init__()
 
-        self.path_data = args.path_data
-        self.load_height = args.load_height
-        self.load_width = args.load_width
-        self.parse = args.parse
-        self.input = args.img_input
-        self.rate = args.rate
-        self.path_txt = args.path_txt
-        self.resize = args.resize
+        self.path_data = path_data
+        self.load_height = load_height
+        self.load_width = load_width
+        self.nb_classes = nb_classes
+        self.path_txt = path_txt
+        self.resize = resize
         if self.resize == True:
             self.transform = transforms.Compose([
                 transforms.ToPILImage(),
@@ -51,12 +50,11 @@ class FasDatasetTest(data.Dataset):
                 transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
                 
             ])
-        self.rate = args.rate
-        self.nb_classes = args.nb_classes
+        
         path_image_s = []
         fnames = []
 
-        with open(args.path_txt, 'r') as f :
+        with open(self.path_txt, 'r') as f :
             for line in f :
                 fnames.append(line.split()[0])
         for fname in tqdm(fnames) :

@@ -18,91 +18,88 @@ from utils.utils import write_txt, save_zip, str2bool
 from tqdm import tqdm
 from dataset.dataset_test import FasDatasetTest
 from torch.utils.data import DataLoader
+from utils import  utils_config_predict, utils_model
 
-from models.resnet import resnet101
+# class SplitModel(nn.Module):
+#     def __init__(self):
+#         super(SplitModel, self).__init__()
+#         self.resnet = resnet101()
+#         num_ftrs = self.resnet.fc.in_features
+#         self.resnet.fc = nn.Linear(num_ftrs, 2)
 
-class SplitModel(nn.Module):
-    def __init__(self):
-        super(SplitModel, self).__init__()
-        self.resnet = resnet101()
-        num_ftrs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(num_ftrs, 2)
+#     def forward(self, x):
+#         x = self.resnet(x)
 
-    def forward(self, x):
-        x = self.resnet(x)
+#         return x
+# class ResNetModified(nn.Module):
+#     def __init__(self):
+#         super(ResNetModified, self).__init__()
+#         self.resnet = torchvision.models.resnet50(pretrained= False)
+#         num_ftrs = self.resnet.fc.in_features
+#         self.resnet.fc = nn.Linear(num_ftrs, 2)
 
-        return x
-class ResNetModified(nn.Module):
-    def __init__(self):
-        super(ResNetModified, self).__init__()
-        self.resnet = torchvision.models.resnet50(pretrained= False)
-        num_ftrs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Linear(num_ftrs, 2)
+#     def forward(self, x):
+#         x = self.resnet(x)
+#         return x
 
-    def forward(self, x):
-        x = self.resnet(x)
-        return x
+# class AlexnetModified(nn.Module) :
+#     def __init__(self, args):
+#         super(AlexnetModified, self).__init__()
+#         self.model = torchvision.models.alexnet(pretrained = args.pretrained)
+#         if args.activation == 'linear' :
+#             self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
+#         else :
+#             self.model.classifier[-1] = nn.Sequential(
+#                                     nn.Linear(self.model.classifier[-1].in_features, 1),
+#                                     nn.Sigmoid()
+#                                     )
+#     def forward(self, x):
+#         x = self.model(x)
+#         return x
 
-class AlexnetModified(nn.Module) :
-    def __init__(self, args):
-        super(AlexnetModified, self).__init__()
-        self.model = torchvision.models.alexnet(pretrained = args.pretrained)
-        if args.activation == 'linear' :
-            self.model.classifier[-1] = nn.Linear(self.model.classifier[-1].in_features, args.nb_classes)
-        else :
-            self.model.classifier[-1] = nn.Sequential(
-                                    nn.Linear(self.model.classifier[-1].in_features, 1),
-                                    nn.Sigmoid()
-                                    )
-    def forward(self, x):
-        x = self.model(x)
-        return x
-
-class Resnet50Edit(nn.Module) :
-    def __init__(self):
-        super(ResNetModified, self).__init__()
-        self.resnet = torchvision.models.resnet50(pretrained=False)
-        for param in self.model.parameters():
-            param.requires_grad = False
-        n_inputs = self.resnet.fc.in_features
-        self.resnet.fc = nn.Sequential(
-                    nn.Linear(n_inputs, 256),
-                    nn.ReLU(),
-                    nn.Dropout(0.5),
-                    nn.Linear(256, 2),
-                    nn.LogSoftmax(dim=1)
-                )
-    def forward(self, x):
-        x = self.resnet(x)
-        return x
+# class Resnet50Edit(nn.Module) :
+#     def __init__(self):
+#         super(ResNetModified, self).__init__()
+#         self.resnet = torchvision.models.resnet50(pretrained=False)
+#         for param in self.model.parameters():
+#             param.requires_grad = False
+#         n_inputs = self.resnet.fc.in_features
+#         self.resnet.fc = nn.Sequential(
+#                     nn.Linear(n_inputs, 256),
+#                     nn.ReLU(),
+#                     nn.Dropout(0.5),
+#                     nn.Linear(256, 2),
+#                     nn.LogSoftmax(dim=1)
+#                 )
+#     def forward(self, x):
+#         x = self.resnet(x)
+#         return x
     
 class Model():
 
-    def __init__(self, args ):
-        if args.name_model == 'alexnet' :
-            self.model = AlexnetModified(args = args).model
-        if args.name_model == 'resnet50' :
-            self.model = ResNetModified()
-        if args.name_model == 'SplitModel' :
-            self.model = SplitModel()
-        self.nb_classes = args.nb_classes
-        self.activation = args.activation
-        self.resize = args.resize
-        self.load_height = args.load_height
-        self.load_width = args.load_width
+    def __init__(self, name_model, nb_classes, load_height, load_width, resize , img_input,
+                 checkpoint_dir, num_train, num_ckpt):
+        
+        self.model = utils_model.create_model(name_model= name_model, num_classes= nb_classes)
+        self.nb_classes = nb_classes
+        self.resize = resize
+        self.load_height = load_height
+        self.load_width = load_width
+
         if self.resize == True :
             self.transform = transforms.Compose([
+                                transforms.ToPILImage(),
                                 transforms.Resize((self.load_height, self.load_width)),
                                 transforms.ToTensor(),
                                 transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
         else : 
             self.transform = transforms.Compose([
+                                transforms.ToPILImage(),
                                 transforms.ToTensor(),
                                 transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD)])
-        self.input = args.img_input
-        self.rate = args.rate
+        self.input =img_input
         
-        self.checkpoint_model = os.path.join(args.checkpoint_dir, args.name_model, args.num_train, args.num_ckpt+'.pth')
+        self.checkpoint_model = os.path.join(checkpoint_dir, name_model, num_train, num_ckpt+'.pth')
  
         self.model.load_state_dict(torch.load(self.checkpoint_model)['model_state_dict'])
 
@@ -117,26 +114,21 @@ class Model():
             (left, top), (right, bottom), dst = read_txt(path_image.replace('.jpg', '.txt'))
         except :
             (left, top), (right, bottom), dst = read_txt(path_image.replace('.png', '.txt'))
-        left, top, right, bottom = int(left/ self.rate), int( top / self.rate), int(right * self.rate), int(bottom * self.rate)
         
-        img_rate = img_full[top: bottom, left: right, :]
+        
+        img_face = img_full[top: bottom, left: right, :]
         img_align = align_face(img_full, dst)
-        img_rate   =cv2.resize(img_rate, (self.load_width, self.load_height))
+
         img_full  =cv2.resize(img_full, (self.load_width, self.load_height))
         img_align = cv2.resize(img_align, (self.load_width, self.load_height))
 
         img_full_add_img_align         = np.concatenate((img_full, img_align), axis= 1)
-        img_face_add_img_align         = np.concatenate((img_rate, img_align), axis= 1)
+        img_face_add_img_align         = np.concatenate((img_face, img_align), axis= 1)
         
-        img_full                         = Image.fromarray(img_full)
-        img_align                      = Image.fromarray(img_align)
-        img_rate                        = Image.fromarray(img_rate)
-        img_full_add_img_align           = Image.fromarray(img_full_add_img_align )
-        img_face_add_img_align           = Image.fromarray(img_face_add_img_align)
 
         img_full                         = self.transform(img_full)
         img_align                      = self.transform(img_align)
-        img_rate                        = self.transform(img_rate)
+        img_face                        = self.transform(img_face)
         img_full_add_img_align           = self.transform(img_full_add_img_align )
         img_face_add_img_align          = self.transform(img_face_add_img_align)
 
@@ -160,9 +152,9 @@ class Model():
         return score
 
 
-def pred_old(args, folder_save) :
+def pred_old(args) :
     path_save_txt = os.path.join(folder_save, 'submit.txt')
-    if args.parse == 'dev' : 
+    if PHASE == 'dev' : 
         args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
         args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
         
@@ -181,192 +173,131 @@ def pred_old(args, folder_save) :
     for fname in tqdm(fnames) :
         path_image = os.path.join(args.path_data, fname)
         score = model.predict(path_image= path_image)
-        # print(score)
-        # scores.append(score[-1])
-        # path.append(args.parse + '/'+ fname)
-        # if args.activation == 'linear':
-        #     print(f'path: {fname}, score: {score} ', end='')
-        #     print('label: ', 'living' if np.argmax(score) == 1 else 'spoof')
-        # else :
-        #     print(f'path: {fname}, score: {score} ', end= '')
-        #     print('label: ','living' if score[0] > args.threshold else 'spoof' )
 
         if args.save_txt :
             if args.activation == 'linear':
                 if args.nb_classes == 2 :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
+                    write_txt(noidung= PHASE + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
                       path= path_save_txt)
-                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]* args.threshold), 
-                    #   path= path_save_txt)
-                    # if score[1] >= args.threshold : 
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                    #     path= path_save_txt)
-                    # else :
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
-                    #   path= path_save_txt)
+
                 else :
-                    # if score[1] >= args.threshold : 
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                    #     path= path_save_txt)
-                    # else :
-                    #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
-                    #   path= path_save_txt)
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
+
+                    write_txt(noidung= PHASE + '/'+ fname + ' ' + "{}".format(score[1]), 
                       path= path_save_txt)
-                # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
-                #       path= path_save_txt)
+
             else :
-                write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
+                write_txt(noidung= PHASE + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
                       path= path_save_txt)
     if args.save_txt :
         save_zip(folder_save= folder_save)
         print('save success {}'.format(folder_save))
 #----------------------------
 
-def pred_new(args, folder_save) :
+def pred_new(cfg) :
+
+    SAVE_TXT = cfg['SAVE_TXT']
+    PHASE = cfg['PHASE']
+    DEVICE = cfg['DEVICE']
+    PATH_DATA = cfg['PATH_DATA']
+    PATH_SAVE = cfg['PATH_SAVE']
+    PATH_TXT = cfg['PATH_TXT']
+    CHECKPOINT_DIR = cfg['CHECKPOINT_DIR']
+    NAME_MODEL = cfg['NAME_MODEL']
+    NUM_CLASSES = cfg['NUM_CLASSES']
+    THRESHOLD = cfg['THRESHOLD']
+    NUM_TRAIN = cfg['NUM_TRAIN']
+    NUM_CKPT = cfg['NUM_CKPT']
+
+    RESIZE = cfg['RESIZE']
+    LOAD_WIDTH = cfg['LOAD_WIDTH']
+    LOAD_HEIGHT =cfg['LOAD_HEIGHT']
+    IMG_INPUT = cfg['IMG_INPUT']
+    BATCH_SIZE = cfg['BATCH_SIZE']
+    NUM_WORKERS = cfg['NUM_WORKERS']
+    COMBINE = cfg['COMBINE']
+    SHUFFLE = cfg['SHUFFLE']
+
+    folder_save = os.path.join(PATH_SAVE, PHASE, 
+                               str(len(os.listdir(os.path.join(PATH_SAVE, PHASE)))).zfill(4))
+    os.makedirs(folder_save, exist_ok= True)
     path_save_txt = os.path.join(folder_save, 'submit.txt')
-    if args.parse == 'dev' : 
+    if PHASE == 'dev' : 
         # args.path_txt = "data/txt/dev.txt"
-        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
-        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
+        PATH_TXT = "/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/Dev.txt"
+        PATH_DATA = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data'
         
     else : 
         # args.path_txt = "data/txt/Test.txt"
-        args.path_txt = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
-        args.path_data = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
-        if args.combine != '000' :
-            shutil.copy(os.path.join(args.path_save, 'dev', args.combine, 'submit.txt'), folder_save)
+        PATH_TXT = "/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/Test.txt"
+        PATH_DATA = '/mnt/sda1/datasets/FAS-CVPR2023/test/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Test_V2-20230223/data'
+        if COMBINE != '000' :
+            shutil.copy(os.path.join(PATH_SAVE, 'dev', COMBINE, 'submit.txt'), folder_save)
 
-    # model = ResNetModified()
-    # model.load_state_dict(torch.load('checkpoints/resnet50/001/4.pth')['model_state_dict'])
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # model.to(device)
-    # model.eval()
-    model = Model(args= args).model
+
+    model = Model(name_model= NAME_MODEL, nb_classes= NUM_CLASSES, load_height= LOAD_HEIGHT,
+                  load_width= LOAD_WIDTH, resize= RESIZE, img_input= IMG_INPUT,
+                  checkpoint_dir= CHECKPOINT_DIR, num_train= NUM_TRAIN, num_ckpt= NUM_CKPT).model
     print(model)
-    # print(model.training)
-    testDataset = FasDatasetTest(args)
-    testLoader = DataLoader(testDataset, batch_size=args.batch_size, \
-                            num_workers= args.num_workers, shuffle= False)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    testDataset = FasDatasetTest(path_data= PATH_DATA, load_height= LOAD_HEIGHT, load_width= LOAD_WIDTH,
+                                 path_txt= PATH_TXT, resize= RESIZE, nb_classes= NUM_CLASSES)
+    testLoader = DataLoader(testDataset, batch_size=BATCH_SIZE, \
+                            num_workers= NUM_WORKERS, shuffle= SHUFFLE)
+
 
     fnames = []
-    with open(args.path_txt, 'r') as f :
+    with open(PATH_TXT, 'r') as f :
         for line in f :
             fnames.append(line.split()[0])
+
     scores = []
-    path = []
-    # for fname in tqdm(fnames) :
+
     for inputs in tqdm(testLoader):
 
-        input  = inputs[args.img_input].to(device)
+        input  = inputs[IMG_INPUT].to(DEVICE)
         with torch.no_grad() :
             output = model(input)
-            if args.activation == 'sigmoid':
-                scores = output.to('cpu').numpy()
-            else :
-                scores = output.softmax(1).to('cpu').numpy()
+            scores = output.softmax(1).to('cpu').numpy()
         for i in range(len(input)):
             fname = inputs['path_image'][i].split('/')[-1]
             score = scores[i]
-            if args.save_txt :
-                if args.activation == 'linear':
-                    if args.nb_classes == 2 :
-                        # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(np.argmax(score)), 
-                        #   path= path_save_txt)
-                        write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                        path= path_save_txt)
-                        # if score[1] >= args.threshold : 
-                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(1), 
-                        #     path= path_save_txt)
-                        # else :
-                        #     write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(0), 
-                        # path= path_save_txt)
-                    else :
-                        if score[1] >= args.threshold : 
-                            write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                            path= path_save_txt)
-                        else :
-                            write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
-                        path= path_save_txt)
-                        # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[1]), 
-                        # path= path_save_txt)
-                    # write_txt(noidung= args.parse + '/'+ fname + ' ' + "{:.10f}".format(abs(score[1]-score[0])), 
-                    #       path= path_save_txt)
+            if SAVE_TXT  :
+                if NUM_CLASSES == 2 :
+                    write_txt(noidung= PHASE + '/'+ fname + ' ' + "{}".format(score[1]), 
+                    path= path_save_txt)
                 else :
-                    write_txt(noidung= args.parse + '/'+ fname + ' ' + "{}".format(score[0]* args.threshold), 
+                    if score[1] >= THRESHOLD : 
+                        write_txt(noidung= PHASE + '/'+ fname + ' ' + "{}".format(score[1]), 
                         path= path_save_txt)
-    if args.save_txt :
+                    else :
+                        write_txt(noidung= PHASE + '/'+ fname + ' ' + "{}".format(abs(score[1] - args.threshold)), 
+                    path= path_save_txt)
+
+
+    if SAVE_TXT :
         save_zip(folder_save= folder_save)
         print('save success {}'.format(folder_save))
+
 def get_args_parser():
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument('--save_txt', type= str2bool, default=True)
-    parser.add_argument('--parse', type= str, default='dev', choices=['dev', 'test'])
-    #path, dir
-    parser.add_argument('--path_data', type= str, default= '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data')
-    parser.add_argument('--path_save', type= str, default= 'results')
-    parser.add_argument('--path_txt', type= str, default="data/dev/dev.txt")
-    parser.add_argument('--checkpoint_dir', type= str, default= 'checkpoints')
-
-    #model
-    parser.add_argument('--activation', type= str, default= 'linear', choices=['linear', 'sigmoid'])
-    parser.add_argument('--nb_classes', type= int, default= 2)
-    parser.add_argument('--pretrained', type= str2bool, default= False)
-    parser.add_argument('--name_model', type=str, default= 'SplitModel', choices=['alexnet','resnet50', 'SplitModel'])
-    parser.add_argument('--num_train', type= str)
-    parser.add_argument('--num_ckpt', type=str)
-    parser.add_argument('--threshold', type= float, default= 0.75)
-
-    #data
-    parser.add_argument('--resize', type=str2bool, default=True)
-    # parser.add_argument('--ycbcr', type=str2bool, default= False)
-    parser.add_argument('--load_height', type=int, default=224)
-    parser.add_argument('--load_width', type=int, default=128)
-    parser.add_argument('--img_input', type=str, default='img_face_add_img_align', \
-        choices=['img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align',\
-                 'img_face_ycbcr', 'img_align_ycbcr', 'img_face_add_img_align_dim6'])
-    parser.add_argument('--rate', type=float, default=1.2)
-    parser.add_argument('--batch_size', type=int, default= 16)
-    parser.add_argument('--num_workers', type=int, default=2)
-    parser.add_argument('--combine', type= str, default= '016')
-    
+    parser.add_argument('--num_config', type= int, default= 1)
     
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__" :
     args = get_args_parser()
-    print('\n'.join(map(str,(str(args).split('(')[1].split(',')))))
-    folder_save = ''
-    if not os.path.exists(args.path_save) :
-        os.makedirs(args.path_save)
-
-    if not os.path.exists(os.path.join(args.path_save, args.parse)) :
-        os.makedirs(os.path.join(args.path_save, args.parse))
-    
-    if args.save_txt == True :
-        num_folder = str(len(os.listdir(os.path.join(args.path_save, args.parse)))).zfill(3)
-
-        if not os.path.exists(os.path.join(args.path_save, 
-                                        args.parse, 
-                                        num_folder)) :
-                os.makedirs(os.path.join(args.path_save, 
-                                        args.parse, 
-                                        num_folder))
-        
-        folder_save = os.path.join(args.path_save, args.parse, num_folder)
-        arg_save = '\n'.join(map(str,(str(args).split('(')[1].split(','))))
-        write_txt(arg_save, os.path.join(folder_save, 'args.txt'))
+    cfg = utils_config_predict.config[args.num_config]
+    PHASE = cfg['PHASE']
+    COMBINE = cfg['COMBINE'] 
     start_time = time.time()
     # pred_old(folder_save = folder_save, args= args)
-    if args.combine == '000' and args.parse == 'test':
-        args.parse = 'dev'
-        pred_new(folder_save = folder_save, args= args)
-        args.parse = 'test'
+    if COMBINE == '000' and PHASE == 'test':
+        PHASE = 'dev'
+        pred_new(cfg=cfg)
+        PHASE = 'test'
 
-    pred_new(folder_save = folder_save, args= args)
+    pred_new(cfg=cfg)
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Predict time {}'.format(total_time_str))

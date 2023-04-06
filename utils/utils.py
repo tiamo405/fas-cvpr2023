@@ -435,15 +435,6 @@ def load_checkpoint(model, checkpoint_path):
     model.load_state_dict(torch.load(checkpoint_path)['model_state_dict'])
 
 
-def create_model(args) :
-    if args.name_model == 'convnext_tiny' :
-        model = convnext.convnext_tiny(pretrained= args.pretrained, args= args)
-    elif args.name_model == 'convnext_small' :
-        model = convnext.convnext_small(pretrained= args.pretrained, args= args)
-    elif args.name_model == 'convnext_large' :
-        model = convnext.convnext_large(pretrained= args.pretrained, args= args)
-
-    return model
 
 def save_txt_array(path_save, fnames, scores, remove = False) :
     if os.path.exists(path_save) and remove == True:

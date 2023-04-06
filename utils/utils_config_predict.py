@@ -1,28 +1,24 @@
 import torch
 config = {
     1: dict(
-    BATCH_SIZE = 16,
-    EPOCHS = 20,
-    TRAIN_ON = 'ssh',
+    SAVE_TXT = True,
+    PHASE = 'test',
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
 
     #dir
-    DATA_ROOT = 'data/train',
+    PATH_DATA = '/mnt/sda1/datasets/FAS-CVPR2023/dev/CVPR2023-Anti_Spoof-Challenge-ReleaseData-Dev-20230211/data',
+    PATH_SAVE = 'results',
+    PATH_TXT = 'data/dev/dev.txt',
     CHECKPOINT_DIR = 'checkpoints',
 
     #model
     NAME_MODEL = 'resnet50',# resnet50, alexnet,
     NUM_CLASSES = 2,
-    LR = 1e-6,
-    NUM_WORKERS = 2,
-    NAME_LOSS = 'Poly1CrossEntropyLoss', # 'BCEWithLogitsLoss', 'Poly1CrossEntropyLoss', 'ArcFace'
-    WEIGHT_DECAY = 5e-4, # do not apply to batch_norm parameters
-    MOMENTUM = 0.9,
-    PIN_MEMORY = True,
-    
+    THRESHOLD = 1,
+
     #ckpt
-    NUM_SAVE_CKPT = 1,
-    SAVE_CKPT = True,
+    NUM_TRAIN = '0009',
+    NUM_CKPT = '4',
 
     #data
     RESIZE = True,
@@ -31,6 +27,9 @@ config = {
     IMG_INPUT = 'img_face',
     #'img_face', 'img_align', 'img_full','img_full_add_img_align', 'img_face_add_img_align',\
                 #  'img_face_ycbcr', 'img_align_ycbcr'
-
+    BATCH_SIZE = 16,
+    NUM_WORKERS = 2,
+    COMBINE = '016',
+    SHUFFLE = False,
     ),
 }

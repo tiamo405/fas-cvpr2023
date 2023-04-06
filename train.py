@@ -45,7 +45,8 @@ def train(cfg):
     IMG_INPUT = cfg['IMG_INPUT']
 
     num_save_file = str(len(os.listdir(os.path.join(CHECKPOINT_DIR, NAME_MODEL)))).zfill(4)
-    logger.info("train ")
+    
+
     if SAVE_CKPT :
         utils_save_cfg.save_cfg(cfg= cfg, checkpoint_dir= CHECKPOINT_DIR, name_model= NAME_MODEL, num_save_file= num_save_file)
 
@@ -81,6 +82,9 @@ def train(cfg):
 
     best_acc = 0.0
     best_epoch = None
+    logger.info('*'*30)
+    logger.info('Start train: name model: {}, run times {}'.format(NAME_MODEL, num_save_file))
+
     for epoch in range(1, EPOCHS +1):
         result = train_one_epoch(model= model, criterion= criterion, optimizer= optimizer, 
                                  lr_schedule_values= lr_schedule_values,
@@ -88,23 +92,24 @@ def train(cfg):
                                  dataLoader = dataLoader,
                                  img_input= IMG_INPUT, num_save_ckpt= NUM_SAVE_CKPT,
                                  save_ckpt= SAVE_CKPT, name_model= NAME_MODEL, train_on= TRAIN_ON, 
-                                 checkpoint_dir= CHECKPOINT_DIR, num_save_file= num_save_file)
+                                 checkpoint_dir= CHECKPOINT_DIR, num_save_file= num_save_file, logger = logger)
         if result['val_acc'] > best_acc :
             best_acc = result['val_acc']
-            best_model_wts = result['best_model_wts']
+            best_model_wts = result['val_model_wts']
             best_epoch = epoch
     model.load_state_dict(best_model_wts)
-    if TRAIN_ON == 'ssh' :
-        torch.save({
-            'epoch': best_epoch,
-            'model_state_dict': model.state_dict(),
-        }, os.path.join(CHECKPOINT_DIR, NAME_MODEL, \
-                        num_save_file, ("best_epoch"+".pth"))) 
-    else : 
-        torch.save({
-            'epoch': best_epoch,
-            'model_state_dict': model.state_dict(),
-        }, ("best_epoch.pth"))
+    if SAVE_CKPT :
+        if TRAIN_ON == 'ssh' :
+            torch.save({
+                'epoch': best_epoch,
+                'model_state_dict': model.state_dict(),
+            }, os.path.join(CHECKPOINT_DIR, NAME_MODEL, \
+                            num_save_file, ("best_epoch"+".pth"))) 
+        else : 
+            torch.save({
+                'epoch': best_epoch,
+                'model_state_dict': model.state_dict(),
+            }, "best_epoch.pth")
         
 def get_args_parser():
     parser = argparse.ArgumentParser()
